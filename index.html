@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机床检修轻量化方案 | 山己几</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.3);
+            --border: #1f2937;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --accent: #2563eb;
+            --accent-glow: rgba(37, 99, 235, 0.15);
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+        .container {
+            width: 92%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 14, 23, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 999;
+            transition: background 0.3s;
+        }
+        [data-theme="light"] .navbar {
+            background: rgba(255, 255, 255, 0.85);
+        }
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--accent);
+        }
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .icon-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .icon-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* 视图通用 */
+        .view {
+            display: none;
+            padding-top: 100px;
+            padding-bottom: 80px;
+            min-height: 100vh;
+            animation: fadeIn 0.5s ease;
+        }
+        .view.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), #06b6d4);
+            border-radius: 2px;
+        }
+        .section-subtitle {
+            color: var(--text-secondary);
+            margin: 1.5rem 0 3rem;
+            max-width: 800px;
+        }
+        .data-note {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.8rem;
+            display: block;
+        }
+
+        /* 首页 */
+        .hero {
+            min-height: 85vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+            z-index: 0;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 750px;
+        }
+        .hero-tag {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 span {
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 650px;
+        }
+        .hero-btns {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.8rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px var(--accent-glow);
+        }
+        .btn-outline {
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            background: transparent;
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* 卡片网格通用 */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.8rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+        .card p, .card li {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        .card ul {
+            list-style: none;
+            margin-top: 0.8rem;
+        }
+        .card ul li {
+            padding: 0.3rem 0;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+        .card ul li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+        }
+        .card.warning {
+            border-left: 4px solid var(--warning);
+        }
+        .card.success {
+            border-left: 4px solid var(--success);
+        }
+
+        /* 方案详情区块 */
+        .solution-block {
+            margin-bottom: 4rem;
+        }
+        .block-title {
+            font-size: 1.5rem;
+            margin: 2.5rem 0 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .block-title::before {
+            content: "";
+            width: 4px;
+            height: 24px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+        .step-list {
+            list-style: none;
+            counter-reset: step;
+        }
+        .step-list li {
+            counter-increment: step;
+            padding: 1rem 0 1rem 3rem;
+            position: relative;
+            border-left: 2px solid var(--border);
+            margin-left: 1rem;
+        }
+        .step-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: -14px;
+            top: 1rem;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        .step-list li strong {
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        /* 图表容器 */
+        .chart-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-box h4 {
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+        .chart {
+            width: 100%;
+            height: 320px;
+        }
+
+        /* FAQ */
+        .faq-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            background: var(--bg-card);
+        }
+        .faq-question {
+            padding: 1.2rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .faq-question:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 1.5rem;
+            color: var(--text-secondary);
+        }
+        .faq-item.open .faq-answer {
+            max-height: 500px;
+            padding: 0 1.5rem 1.2rem;
+        }
+        .faq-item.open .faq-icon {
+            transform: rotate(45deg);
+        }
+        .faq-icon {
+            transition: transform 0.3s;
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+
+        /* 更新日志 */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .timeline::before {
+            content: "";
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -2rem;
+            top: 6px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid var(--bg-primary);
+        }
+        .timeline-date {
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .timeline-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem 1.5rem;
+        }
+        .timeline-content ul {
+            list-style: none;
+            margin-top: 0.5rem;
+        }
+        .timeline-content li {
+            padding: 0.25rem 0;
+            color: var(--text-secondary);
+            padding-left: 1rem;
+            position: relative;
+            font-size: 0.95rem;
+        }
+        .timeline-content li::before {
+            content: "·";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        /* 技能页 */
+        .skill-category {
+            margin-bottom: 2.5rem;
+        }
+        .skill-category h3 {
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+        }
+        .skill-tag {
+            padding: 0.5rem 1.2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .skill-tag:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* 技能词条：点击展开技术说明 */
+        .skill-item { flex: 0 0 auto; }
+        .skill-item[open] { flex: 0 0 100%; }
+        .skill-item > summary { list-style: none; cursor: pointer; }
+        .skill-item > summary::-webkit-details-marker { display: none; }
+        .skill-item > summary.skill-tag { display: inline-flex; align-items: center; }
+        .skill-tag .plus {
+            margin-left: 6px;
+            font-style: normal;
+            font-weight: 400;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .skill-item > summary:hover .plus,
+        .skill-item > summary:focus-visible .plus { opacity: 0.65; }
+        .skill-item[open] > summary.skill-tag {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .skill-detail {
+            max-height: 360px;
+            overflow: auto;
+            overscroll-behavior: contain;
+            margin-top: 0.6rem;
+            padding: 1rem 1.2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            animation: detailIn 0.18s ease;
+        }
+        @keyframes detailIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .skill-detail .note {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            margin-bottom: 0.6rem;
+        }
+        .skill-detail .pos { margin-bottom: 0.6rem; }
+        .skill-detail .pos .chip {
+            display: inline-block;
+            margin-right: 0.5rem;
+            padding: 0 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .skill-detail ul {
+            list-style: none;
+            margin: 0 0 0.6rem;
+            padding: 0;
+        }
+        .skill-detail ul li {
+            position: relative;
+            padding-left: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .skill-detail ul li::before {
+            content: "·";
+            position: absolute;
+            left: 0;
+        }
+        .skill-learn {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.2rem 1.2rem;
+        }
+        .skill-learn a {
+            color: inherit;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .skill-learn a:hover { color: var(--accent); }
+        .skill-learn .type {
+            display: inline-block;
+            margin-right: 0.4rem;
+            padding: 0 0.35rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+        @media (max-width: 480px) {
+            .skill-learn { grid-template-columns: 1fr; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .skill-detail { animation: none; }
+            .skill-tag .plus { transition: none; }
+        }
+
+        /* 联系卡片：复制按钮与二维码 */
+        .contact-item .copy-btn {
+            margin-top: 0.6rem;
+            padding: 0.15rem 0.6rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .contact-item .copy-btn:hover,
+        .contact-item .copy-btn.done {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+        .contact-item .qr {
+            width: 140px;
+            height: 140px;
+            margin-top: 0.75rem;
+            padding: 6px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            object-fit: contain;
+        }
+        .contact-item .qr-tip {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            line-height: 1.6;
+        }
+        .contact-item .qr-ph {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 140px;
+            height: 140px;
+            margin: 0.75rem auto 0;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .contact-item .qr {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .contact-item a.discussion-link {
+            color: var(--accent);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+        }
+
+        /* 留言板 */
+        .guestbook-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        /* 联系页 */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .contact-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .contact-item:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+        }
+        .contact-item .icon {
+            font-size: 2rem;
+            margin-bottom: 0.8rem;
+            color: var(--accent);
+        }
+        .contact-item a {
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .contact-item a:hover {
+            color: var(--accent);
+        }
+
+        /* 页脚 */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            background: var(--bg-secondary);
+        }
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* 移动端 */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .nav-links { display: none; }
+            .section-title { font-size: 1.6rem; }
+            .grid-3, .grid-2 { grid-template-columns: 1fr; }
+        }
+
+        /* 入场动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body data-theme="dark">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="logo">MT-Predict</div>
+            <ul class="nav-links">
+                <li><a data-view="home" class="nav-link active zh">首页</a><a data-view="home" class="nav-link active en" style="display:none">Home</a></li>
+                <li><a data-view="solution" class="nav-link zh">方案介绍</a><a data-view="solution" class="nav-link en" style="display:none">Solution</a></li>
+                <li><a data-view="skills" class="nav-link zh">技能清单</a><a data-view="skills" class="nav-link en" style="display:none">Skills</a></li>
+                <li><a data-view="faq" class="nav-link zh">常见问题</a><a data-view="faq" class="nav-link en" style="display:none">FAQ</a></li>
+                <li><a data-view="changelog" class="nav-link zh">更新日志</a><a data-view="changelog" class="nav-link en" style="display:none">Changelog</a></li>
+                <li><a data-view="guestbook" class="nav-link zh">留言板</a><a data-view="guestbook" class="nav-link en" style="display:none">Guestbook</a></li>
+                <li><a data-view="contact" class="nav-link zh">联系我</a><a data-view="contact" class="nav-link en" style="display:none">Contact</a></li>
+            </ul>
+            <div class="nav-actions">
+                <button class="icon-btn" id="langToggle" title="切换语言">EN</button>
+                <button class="icon-btn" id="themeToggle" title="切换主题">☾</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- 首页 -->
+        <section id="home" class="view active">
+            <div class="hero">
+                <div class="hero-content fade-in">
+                    <span class="hero-tag zh">面向中小企业的机床预测维护方案</span>
+                    <span class="hero-tag en" style="display:none">Lightweight Predictive Maintenance for SMEs</span>
+                    <h1 class="zh">
+                        让机床检修从<br>
+                        <span>「看板摆设」走向「落地闭环」</span>
+                    </h1>
+                    <h1 class="en" style="display:none">
+                        Machine Tool Maintenance:<br>
+                        <span>From Dashboard to Closed-Loop Action</span>
+                    </h1>
+                    <p class="zh">
+                        针对实验室指标与车间可用性脱节的行业痛点，构建工况感知、边云协同、物理机理约束的轻量化检修模型，
+                        让中小型企业以数万元级成本落地预测性维护，降低非计划停机风险。
+                    </p>
+                    <p class="en" style="display:none">
+                        Bridging the gap between lab metrics and factory availability. A lightweight solution with operating condition awareness, edge-cloud synergy and physical mechanism constraints, 
+                        enabling SMEs to deploy predictive maintenance at low cost.
+                    </p>
+                    <div class="hero-btns">
+                        <a class="btn btn-primary" data-view="solution">
+                            <span class="zh">查看完整方案</span>
+                            <span class="en" style="display:none">View Solution</span>
+                        </a>
+                        <a class="btn btn-outline" data-view="contact">
+                            <span class="zh">交流合作</span>
+                            <span class="en" style="display:none">Contact Me</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 方案介绍（核心完善部分） -->
+        <section id="solution" class="view">
+            <h2 class="section-title zh">项目核心方案</h2>
+            <h2 class="section-title en" style="display:none">Core Solution</h2>
+            <p class="section-subtitle zh">
+                基于「工况对齐 + 边云协同 + 机理约束 + 维修闭环」四大支柱，解决传统预测维护平台误报高、落地难、无闭环的普遍问题，
+                为中小企业提供可解释、低成本、可分步落地的检修方案。
+            </p>
+            <p class="section-subtitle en" style="display:none">
+                Built on condition alignment, edge-cloud synergy, mechanism constraints and maintenance closure. 
+                A cost-effective, interpretable, step-by-step solution for small and medium enterprises.
+            </p>
+
+            <!-- 核心矛盾 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">核心矛盾：实验室指标 ≠ 车间可用性</h3>
+                <h3 class="block-title en" style="display:none">Core Conflict: Lab Metrics ≠ Factory Availability</h3>
+                <div class="card warning">
+                    <p class="zh">
+                        当前多数机床预测维护平台能在演示环境中达到高准确率，却在真实产线上因<strong>数据割裂、工况漂移、处置闭环缺失</strong>而沦为「看板摆设」。
+                        可行的改进路径应围绕上下文融合、轻量化边缘部署与维修决策闭环展开，而非继续堆叠算法复杂度。
+                    </p>
+                    <p class="en" style="display:none">
+                        Most platforms achieve high accuracy in demos, but fail on real production lines due to <strong>data silos, operating drift and missing maintenance closure</strong>.
+                        Improvements should focus on context fusion, lightweight edge deployment and decision closure, not just algorithm complexity.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 四大行业问题 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">行业普遍存在的四大核心问题</h3>
+                <h3 class="block-title en" style="display:none">Four Common Industry Problems</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-icon">📊</div>
+                        <h3 class="zh">数据与工况上下文割裂</h3>
+                        <h3 class="en" style="display:none">Data & Condition Fragmentation</h3>
+                        <p class="zh">
+                            振动、电流等高频数据若缺乏工艺阶段（粗加工/精加工）与批次信息对齐，只是无意义的乱波。
+                            同一振动幅值在粗铣时正常，在精铣时可能已预示刀具失效。固定阈值监控在变工况下必然失灵，导致操作工逐渐关闭报警。
+                        </p>
+                        <p class="en" style="display:none">
+                            High-frequency data without process context (rough/finish machining) is meaningless.
+                            Fixed thresholds fail under variable conditions, leading to false alarms and operator distrust.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🧪</div>
+                        <h3 class="zh">故障样本稀缺，泛化能力弱</h3>
+                        <h3 class="en" style="display:none">Scarce Fault Samples & Poor Generalization</h3>
+                        <p class="zh">
+                            机床故障数据获取代价极高，现有数据集多靠人为注入故障模拟，难以反映真实现场复杂性。
+                            针对某型号训练的模型迁移到另一台机床，因装配精度、使用年限差异，性能急剧下降，几乎需逐台重新标定。
+                        </p>
+                        <p class="en" style="display:none">
+                            Fault data is expensive to acquire. Models trained on one machine degrade sharply on another due to assembly and age differences, requiring per-machine calibration.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">⚡</div>
+                        <h3 class="zh">边缘算力受限与实时性瓶颈</h3>
+                        <h3 class="en" style="display:none">Edge Computing & Real-Time Limits</h3>
+                        <p class="zh">
+                            工控现场计算资源无法直接运行复杂深度学习模型。海量毫秒级数据全部上云，带宽压力和传输延迟在紧急停机场景下不可接受。
+                            单纯依赖云端推理，难以在主轴卡死前完成决策。
+                        </p>
+                        <p class="en" style="display:none">
+                            Complex deep learning models cannot run directly on industrial edge devices.
+                            Cloud-only inference cannot meet the latency requirements for emergency spindle shutdown.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🔧</div>
+                        <h3 class="zh">诊断与维修处置脱节</h3>
+                        <h3 class="en" style="display:none">Disconnect Between Diagnosis & Repair</h3>
+                        <p class="zh">
+                            大量平台止步于「发出预警」，但现场如何验证、由谁处置、备件是否就绪，均未打通。
+                            缺乏维修知识库与工单系统的联动，预警报告往往沦为一份无人执行的文档。
+                        </p>
+                        <p class="en" style="display:none">
+                            Most platforms only send alerts without connecting to repair workflows, spare parts or work orders.
+                            Warnings often end up as unexecuted reports.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 五大改进路径 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">五大可行性改进路径</h3>
+                <h3 class="block-title en" style="display:none">Five Feasible Improvement Paths</h3>
+                <div class="grid-3">
+                    <div class="card success">
+                        <div class="card-icon">🎯</div>
+                        <h3 class="zh">1. 工况感知数据对齐层</h3>
+                        <h3 class="en" style="display:none">1. Condition-Aware Data Alignment</h3>
+                        <ul class="zh">
+                            <li>从数控系统读取程序段号、主轴负载率</li>
+                            <li>自动划分粗加工、精加工、空切片段</li>
+                            <li>各工况建立专属动态基线，仅偏离时报警</li>
+                            <li>大幅压低变工况引起的误报</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Read CNC program segments and spindle load</li>
+                            <li>Auto-classify rough/finish/air-cut phases</li>
+                            <li>Dynamic baseline per condition</li>
+                            <li>Significantly reduce false alarms</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">☁️</div>
+                        <h3 class="zh">2. 边云协同架构</h3>
+                        <h3 class="en" style="display:none">2. Edge-Cloud Synergy</h3>
+                        <ul class="zh">
+                            <li>边缘端：轻量特征提取 + 毫秒级急停判断</li>
+                            <li>仅上传特征向量，不上传原始波形</li>
+                            <li>云端：定期迭代复杂诊断模型并下发</li>
+                            <li>兼顾实时响应与模型持续进化</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Edge: lightweight features + ms-level emergency stop</li>
+                            <li>Upload only feature vectors, not raw waveforms</li>
+                            <li>Cloud: iterate complex models periodically</li>
+                            <li>Balance real-time response and model evolution</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">⚙️</div>
+                        <h3 class="zh">3. 物理机理约束嵌入</h3>
+                        <h3 class="en" style="display:none">3. Physical Mechanism Constraints</h3>
+                        <ul class="zh">
+                            <li>嵌入轴承BPFO/BPFI、丝杠临界转速等先验</li>
+                            <li>频带注意力模块强制关注缺陷特征频段</li>
+                            <li>小样本下显著提升泛化能力</li>
+                            <li>避免纯数据驱动的过拟合风险</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Embed BPFO/BPFI and lead screw physics priors</li>
+                            <li>Frequency band attention on defect frequencies</li>
+                            <li>Better generalization with few samples</li>
+                            <li>Avoid overfitting in data-only models</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">🔄</div>
+                        <h3 class="zh">4. 维修工单闭环</h3>
+                        <h3 class="en" style="display:none">4. Closed-Loop Maintenance Workflow</h3>
+                        <ul class="zh">
+                            <li>预警触发后自动匹配处置预案与备件</li>
+                            <li>生成带优先级的维修工单推送班组</li>
+                            <li>记录维修结果，反哺模型置信度</li>
+                            <li>形成「预警-处置-验证」数据闭环</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Auto-match repair procedures and spare parts</li>
+                            <li>Generate prioritized work orders</li>
+                            <li>Record repair results to improve model confidence</li>
+                            <li>Alert → Action → Verification closed loop</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">📈</div>
+                        <h3 class="zh">5. 分阶段落地策略</h3>
+                        <h3 class="en" style="display:none">5. Phased Deployment Strategy</h3>
+                        <ul class="zh">
+                            <li>第一阶段：状态基线建档，可解释体检报告</li>
+                            <li>第二阶段：引入已知故障模式分类</li>
+                            <li>第三阶段：尝试剩余寿命预测</li>
+                            <li>先建立信任，再接受预测性结论</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Phase 1: baseline health monitoring</li>
+                            <li>Phase 2: known fault mode classification</li>
+                            <li>Phase 3: remaining useful life prediction</li>
+                            <li>Build trust before predictive conclusions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据对比图表 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">方案效果与成本对比</h3>
+                <h3 class="block-title en" style="display:none">Performance & Cost Comparison</h3>
+                <div class="grid-2">
+                    <div class="chart-box">
+                        <h4 class="zh">传统方案 vs 轻量化方案 部署成本对比</h4>
+                        <h4 class="en" style="display:none">Deployment Cost: Traditional vs Lightweight</h4>
+                        <div id="costChart" class="chart"></div>
+                        <span class="data-note zh">*数据整理自公开行业调研与试点案例，单位：万元人民币，具体以实际场景为准</span>
+                        <span class="data-note en" style="display:none">*Data from public industry reports. Unit: 10k CNY. Subject to actual scenarios.</span>
+                    </div>
+                    <div class="chart-box">
+                        <h4 class="zh">变工况下误报率对比（典型场景）</h4>
+                        <h4 class="en" style="display:none">False Alarm Rate Under Variable Conditions</h4>
+                        <div id="alarmChart" class="chart"></div>
+                        <span class="data-note zh">*基于行业典型工况估算值，实际效果取决于数据质量与工况划分精度</span>
+                        <span class="data-note en" style="display:none">*Estimated values under typical conditions. Actual results depend on data quality.</span>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <h4 class="zh">分阶段部署能力提升曲线</h4>
+                    <h4 class="en" style="display:none">Capability Improvement by Deployment Phase</h4>
+                    <div id="phaseChart" class="chart"></div>
+                    <span class="data-note zh">*停机损失降低比例为相对值，基于单点瓶颈设备试点场景估算</span>
+                    <span class="data-note en" style="display:none">*Downtime loss reduction is relative, estimated on single bottleneck machine pilot.</span>
+                </div>
+            </div>
+
+            <!-- 中小企业落地指南 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">中小企业专属落地指南</h3>
+                <h3 class="block-title en" style="display:none">Deployment Guide for SMEs</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 class="zh">算力门槛：轻量化边缘即可</h3>
+                        <h3 class="en" style="display:none">Computing: Lightweight Edge is Enough</h3>
+                        <p class="zh">
+                            无需强大算力。20维特征输入的随机森林模型，在普通边缘网关上单次推理耗时不到3毫秒。
+                            一台约2500元的ARM架构边缘盒子，即可完成振动数据本地特征提取和实时异常判断。
+                            原始高频数据在车间本地处理，仅上传特征值与报警片段，对云端算力几乎无要求。
+                        </p>
+                        <p class="en" style="display:none">
+                            No heavy computing power needed. A random forest model runs in under 3ms on a standard edge gateway.
+                            An ~¥2500 ARM edge box handles local feature extraction and real-time anomaly detection.
+                            Raw data stays on site; only features and alarm clips are uploaded.
+                        </p>
+                    </div>
+                    <div class="card">
+                        <h3 class="zh">成本构成：数万元级试点</h3>
+                        <h3 class="en" style="display:none">Cost: Pilot Starting from ~¥10k</h3>
+                        <ul class="zh">
+                            <li>单点试点：单台瓶颈设备加装传感器+网关，硬件数千元起步</li>
+                            <li>轻量化平台：单厂部署成本约为传统大型系统的1/5</li>
+                            <li>注意隐形账：传感器数量、年度服务费可能吃掉大部分停机节省</li>
+                            <li>回本关键：优先选高价值、高故障频率的设备</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Single-machine pilot: sensors + gateway from ~¥1000</li>
+                            <li>Lightweight platform: ~1/5 the cost of traditional systems</li>
+                            <li>Hidden costs: sensors and annual service fees</li>
+                            <li>ROI key: start with high-value, high-fault machines</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3 class="zh">人工投入：运维负担轻</h3>
+                        <h3 class="en" style="display:none">Labor: Low Operational Burden</h3>
+                        <p class="zh">
+                            系统设计目标是降低对资深技工的依赖，AI自动生成检修方案、派单并联动备件库存。
+                            试点数据显示，运维人工成本可降低35%，非计划停机率下降42%。
+                            初期需配合建立健康基线与模型调优，不需要专职IT团队驻场。
+                        </p>
+                        <p class="en" style="display:none">
+                            Reduces reliance on senior technicians with AI-generated repair plans and spare parts linkage.
+                            Pilot data shows 35% lower maintenance labor and 42% less unplanned downtime.
+                            Initial baseline setup requires cooperation, but no full-time IT team.
+                        </p>
+                        <span class="data-note zh">*效果数据来自公开试点案例统计</span>
+                        <span class="data-note en" style="display:none">*Effect data from public pilot case statistics</span>
+                    </div>
+                    <div class="card">
+                        <h3 class="zh">务实策略：单点试点，小步快跑</h3>
+                        <h3 class="en" style="display:none">Strategy: Pilot First, Expand Gradually</h3>
+                        <p class="zh">
+                            放弃「全厂智能化」幻想，挑出一台停机损失最大或故障最频繁的瓶颈设备做单点试点。
+                            运行一两个月，验证误报率与预警有效性后，再扩展到第二台、第三台。
+                            试错成本最低，也最容易让维修团队建立对系统的信任。
+                        </p>
+                        <p class="en" style="display:none">
+                            Skip the "full factory intelligence" fantasy. Start with one bottleneck machine with highest downtime cost.
+                            Run 1-2 months to verify false alarm rate and effectiveness, then expand.
+                            Lowest trial-and-error cost, easiest way to build maintenance team trust.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工况划分与动态基线 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">核心技术实现：工况划分与动态基线</h3>
+                <h3 class="block-title en" style="display:none">Core Tech: Condition Classification & Dynamic Baseline</h3>
+                
+                <h4 style="margin: 1.5rem 0 1rem; color: var(--accent);" class="zh">一、如何划分「粗加工 / 精加工 / 空切」</h4>
+                <h4 style="margin: 1.5rem 0 1rem; color: var(--accent);" class="en" style="display:none">1. How to Classify Machining Conditions</h4>
+                <div class="step-list zh">
+                    <li>
+                        <strong>首选：直接读取数控系统信号</strong>
+                        通过OPC UA或宏变量读取程序段号、刀具号、进给倍率。规范程序下，不同工序对应不同刀具或G代码区间，可直接判定工况。
+                    </li>
+                    <li>
+                        <strong>校验：电流/振动特征二次确认</strong>
+                        用主轴电流阈值排除空切；用电流RMS、振动峭度区分粗加工（高负载、强波动）与精加工（平稳、低幅值）。
+                    </li>
+                    <li>
+                        <strong>兜底：滑动窗口+轻量分类器</strong>
+                        无法读取数控信号时，用振动统计特征训练决策树分类器，区分空闲、空切与切削，作为辅助手段。
+                    </li>
+                </div>
+                <div class="step-list en" style="display:none">
+                    <li>
+                        <strong>First choice: Read CNC signals directly</strong>
+                        Read program segments, tool numbers and feed rates via OPC UA or macro variables. Direct condition mapping from well-organized CNC programs.
+                    </li>
+                    <li>
+                        <strong>Verification: Current / vibration features</strong>
+                        Use spindle current threshold to exclude air cuts; use RMS and kurtosis to distinguish rough (high load, strong fluctuation) from finish machining.
+                    </li>
+                    <li>
+                        <strong>Fallback: Sliding window + lightweight classifier</strong>
+                        Train a decision tree on vibration statistical features when CNC signals are unavailable, as an auxiliary method.
+                    </li>
+                </div>
+
+                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="zh">二、动态基线建立四步法</h4>
+                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="en" style="display:none">2. Four Steps to Build Dynamic Baseline</h4>
+                <div class="step-list zh">
+                    <li>
+                        <strong>采集健康期数据</strong>
+                        设备保养后或状态良好时，连续采集覆盖所有工况的正常加工数据，建议至少数十个完整加工循环。
+                    </li>
+                    <li>
+                        <strong>按工况分组提取特征</strong>
+                        将数据按工况切分，归入粗加工、精加工、空切组；提取电流有效值、振动有效值、峭度等关键特征。
+                    </li>
+                    <li>
+                        <strong>统计正常波动范围</strong>
+                        每组内计算均值与标准差，基线定义为「均值 ± 3倍标准差」，覆盖99.7%的健康数据。超出该工况专属基线则触发预警。
+                    </li>
+                    <li>
+                        <strong>定期更新基线</strong>
+                        每季度或大保养后用近期无故障数据重算基线；短期内显著漂移本身就是设备状态变化的信号。
+                    </li>
+                </div>
+                <div class="step-list en" style="display:none">
+                    <li>
+                        <strong>Collect healthy-state data</strong>
+                        Collect normal machining data covering all conditions after maintenance, preferably dozens of complete machining cycles.
+                    </li>
+                    <li>
+                        <strong>Group by condition, extract features</strong>
+                        Split data into rough/finish/air-cut groups; extract key features like current RMS, vibration RMS and kurtosis.
+                    </li>
+                    <li>
+                        <strong>Calculate normal range</strong>
+                        Baseline = mean ± 3σ, covering 99.7% of healthy data. Alerts trigger only when values exceed the condition-specific baseline.
+                    </li>
+                    <li>
+                        <strong>Update baseline periodically</strong>
+                        Recalculate quarterly or after major maintenance. Sudden drift itself signals changing machine condition.
+                    </li>
+                </div>
+            </div>
+
+            <!-- 方案边界与非理想性 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">方案边界与非理想性</h3>
+                <h3 class="block-title en" style="display:none">Limitations & Non-Ideal Conditions</h3>
+                <div class="card warning">
+                    <ul class="zh">
+                        <li>仍需一定量的健康数据建立基线，完全无历史数据的设备无法直接上线</li>
+                        <li>极端非标工况、从未出现过的全新故障类型，识别能力有限，无法覆盖所有未知故障</li>
+                        <li>上线初期需要现场人员配合调优，无法完全开箱即用，存在1-2个月的适配周期</li>
+                        <li>老旧机床无法读取数控信号时，工况划分精度下降，误报率会有所上升</li>
+                        <li>单点试点效果明确，但全厂铺开仍需逐步投入硬件与人工，不存在一蹴而就的方案</li>
+                        <li>仅能显著降低非计划停机风险，无法100%消除故障与停机，不能替代日常保养</li>
+                        <li>故障样本极少的特殊机型，物理机理约束可提升泛化性，但仍达不到大量样本训练的效果</li>
+                    </ul>
+                    <ul class="en" style="display:none">
+                        <li>Requires healthy baseline data; cannot deploy on machines with no history</li>
+                        <li>Limited ability to detect extreme non-standard and completely new fault types</li>
+                        <li>Requires on-site cooperation during initial 1-2 month tuning period</li>
+                        <li>Lower classification accuracy on old machines without CNC signal access</li>
+                        <li>Factory-wide rollout requires gradual hardware and labor investment</li>
+                        <li>Reduces unplanned downtime significantly, but cannot eliminate all failures</li>
+                        <li>Physics constraints help with few samples, but cannot match large dataset performance</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- 故障清单 + 选型建议 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">配套参考资料</h3>
+                <h3 class="block-title en" style="display:none">Reference Materials</h3>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3 class="zh">常见故障类型清单</h3>
+                        <h3 class="en" style="display:none">Common Fault Types</h3>
+                        <ul class="zh">
+                            <li>主轴轴承外圈/内圈损伤（BPFO/BPFI特征频率）</li>
+                            <li>刀具磨损、崩刃与失效</li>
+                            <li>丝杠传动副磨损、反向间隙增大</li>
+                            <li>拉刀爪磨损导致主轴振动异常</li>
+                            <li>主轴卡滞、负载异常升高</li>
+                            <li>电机定子绕组异常、绝缘老化</li>
+                            <li>导轨润滑不良导致的爬行与振动</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Spindle bearing outer/inner race damage</li>
+                            <li>Tool wear, chipping and failure</li>
+                            <li>Lead screw wear, increased backlash</li>
+                            <li>Drawbar claw wear causing spindle vibration</li>
+                            <li>Spindle seizure and abnormal load rise</li>
+                            <li>Motor winding insulation degradation</li>
+                            <li>Guideway poor lubrication causing crawl & vibration</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3 class="zh">中小企业选型建议</h3>
+                        <h3 class="en" style="display:none">SME Selection Advice</h3>
+                        <ul class="zh">
+                            <li>优先选能直接读取本机数控信号的方案，减少算法依赖</li>
+                            <li>不追求全厂一步到位，从单台瓶颈设备试点起步</li>
+                            <li>看重可解释性：基线、报警原因维修工能看懂，而非黑箱模型</li>
+                            <li>警惕隐形服务费：问清年度服务费、升级费、备件价格</li>
+                            <li>优先选择支持边缘端本地推理的方案，降低带宽与隐私风险</li>
+                            <li>要求提供同行业真实落地案例，而非仅实验室演示</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Prefer solutions with native CNC signal integration</li>
+                            <li>Start with single machine pilot, not full factory rollout</li>
+                            <li>Prioritize interpretability over pure accuracy</li>
+                            <li>Clarify annual service fees and hidden costs upfront</li>
+                            <li>Prefer on-edge inference for bandwidth and privacy</li>
+                            <li>Ask for real industry cases, not just lab demos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-outline zh">📄 下载完整方案文档（暂未公开）</button>
+                <button class="btn btn-outline en" style="display:none">📄 Download Full Proposal (Not Public)</button>
+            </div>
+        </section>
+
+        <!-- 技能清单 -->
+        <section id="skills" class="view">
+            <h2 class="section-title zh">技能清单</h2>
+            <h2 class="section-title en" style="display:none">Skill Set</h2>
+            <p class="section-subtitle zh">围绕机床预测维护项目所涉及的技术栈与能力</p>
+            <p class="section-subtitle en" style="display:none">Tech stack and capabilities related to machine tool predictive maintenance</p>
+
+            <div class="skill-category fade-in">
+                <h3 class="zh">编程语言与算法</h3>
+                <h3 class="en" style="display:none">Programming & Algorithms</h3>
+                <div class="skill-tags">
+                    <span class="skill-tag">Python</span>
+                    <span class="skill-tag">C++</span>
+                    <span class="skill-tag">机器学习</span>
+                    <span class="skill-tag">信号处理</span>
+                    <span class="skill-tag">特征工程</span>
+                    <span class="skill-tag">异常检测</span>
+                </div>
+            </div>
+
+            <div class="skill-category fade-in">
+                <h3 class="zh">工业与嵌入式</h3>
+                <h3 class="en" style="display:none">Industrial & Embedded</h3>
+                <div class="skill-tags">
+                    <span class="skill-tag">边缘计算</span>
+                    <span class="skill-tag">OPC UA</span>
+                    <span class="skill-tag">传感器数据采集</span>
+                    <span class="skill-tag">振动分析</span>
+                    <span class="skill-tag">ARM 开发</span>
+                </div>
+            </div>
+
+            <div class="skill-category fade-in">
+                <h3 class="zh">前端与可视化</h3>
+                <h3 class="en" style="display:none">Frontend & Visualization</h3>
+                <div class="skill-tags">
+                    <span class="skill-tag">HTML / CSS / JS</span>
+                    <span class="skill-tag">ECharts</span>
+                    <span class="skill-tag">数据可视化</span>
+                    <span class="skill-tag">响应式设计</span>
+                </div>
+            </div>
+
+            <div class="skill-category fade-in">
+                <h3 class="zh">其他能力</h3>
+                <h3 class="en" style="display:none">Other Skills</h3>
+                <div class="skill-tags">
+                    <span class="skill-tag">需求分析</span>
+                    <span class="skill-tag">方案设计</span>
+                    <span class="skill-tag">技术文档撰写</span>
+                    <span class="skill-tag">工业场景调研</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="faq" class="view">
+            <h2 class="section-title zh">常见问题</h2>
+            <h2 class="section-title en" style="display:none">FAQ</h2>
+            <p class="section-subtitle zh">关于方案落地、适用性与成本的常见疑问</p>
+            <p class="section-subtitle en" style="display:none">Common questions about deployment, applicability and cost</p>
+
+            <div class="faq-list fade-in">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span class="zh">没有数控系统读取权限，还能用上这套方案吗？</span>
+                        <span class="en" style="display:none">Can I use this without CNC system access?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            可以，但效果会打折扣。无法读取数控信号时，可以采用「滑动窗口+轻量分类器」的兜底方案，
+                            用振动和电流的统计特征区分工况，但空切与切削的混淆率会上升，误报率高于数控信号对齐的方案。
+                            建议优先协调机床厂家或运维方开放OPC UA或宏变量读取权限，性价比最高。
+                        </p>
+                        <p class="en" style="display:none">
+                            Yes, but with reduced performance. You can use the fallback sliding-window classifier based on vibration and current features.
+                            However, false alarm rate will be higher than with CNC signal alignment. Prioritize getting OPC UA or macro variable access if possible.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span class="zh">部署后多久能看到实际效果？</span>
+                        <span class="en" style="display:none">How long until results are visible?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            单点试点的话，硬件安装后通常需要1-2周采集健康数据建立基线；
+                            基线建立完成即可进入监控状态，1-2个月内可以验证误报率与预警有效性。
+                            明显的停机减少、维修效率提升效果，通常在3-6个月的稳定运行后体现。
+                        </p>
+                        <p class="en" style="display:none">
+                            For a single-machine pilot, 1-2 weeks of healthy data collection is needed to build the baseline.
+                            Monitoring starts immediately after baseline setup; effectiveness can be verified in 1-2 months.
+                            Significant downtime reduction is usually visible after 3-6 months of stable operation.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span class="zh">需要专门的IT团队维护系统吗？</span>
+                        <span class="en" style="display:none">Do we need a dedicated IT team?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            不需要。轻量化方案的设计目标就是降低运维门槛，日常操作由设备维修班组即可完成。
+                            仅在系统升级、硬件故障时需要厂商或技术人员支持，不需要专职信息化人员驻场。
+                            初期的基线建立与调优，厂商通常会提供陪跑服务。
+                        </p>
+                        <p class="en" style="display:none">
+                            No. Lightweight solutions are designed for low maintenance overhead. Daily operations can be handled by the maintenance team.
+                            Only system upgrades and hardware failures require vendor support. Initial setup and tuning usually includes vendor assistance.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span class="zh">使用年限很久的老旧机床也能部署吗？</span>
+                        <span class="en" style="display:none">Can old machines be upgraded too?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            可以，但不建议一上来就上预测模型。老旧机床状态波动大、基线不稳定，
+                            建议第一阶段只做状态监控和基线体检，提供偏离程度报告，先让维修团队建立信任。
+                            等积累足够数据后，再逐步引入故障分类与预测功能。老旧机床更要注重可解释性，而非准确率指标。
+                        </p>
+                        <p class="en" style="display:none">
+                            Yes, but do not start with full prediction models. Old machines have unstable baselines and high variance.
+                            Start with health monitoring and baseline reporting to build trust. 
+                            Gradually introduce fault classification and prediction after sufficient data is accumulated.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span class="zh">方案源码和模型会开源吗？</span>
+                        <span class="en" style="display:none">Will the source code be open-sourced?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            本网站源码仅作展示用途，项目核心模型与完整方案源码暂不公开。
+                            网站页面遵循 Apache License 2.0 协议的展示规范，方案内容欢迎交流探讨。
+                            如有合作或技术交流意向，可通过联系方式与我取得联系。
+                        </p>
+                        <p class="en" style="display:none">
+                            The website source is for demonstration only. Core model and full solution source code are not publicly available.
+                            The website follows Apache License 2.0 display requirements. Feel free to reach out for cooperation or technical discussion.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 更新日志 -->
+        <section id="changelog" class="view">
+            <h2 class="section-title zh">更新日志</h2>
+            <h2 class="section-title en" style="display:none">Changelog</h2>
+            <p class="section-subtitle zh">项目与网站的迭代记录</p>
+            <p class="section-subtitle en" style="display:none">Project and website iteration records</p>
+
+            <div class="timeline fade-in">
+                <div class="timeline-item">
+                    <div class="timeline-date">v1.1 · 2026-11-24</div>
+                    <div class="timeline-content">
+                        <strong class="zh">完善方案详情页</strong>
+                        <strong class="en" style="display:none">Enhanced solution detail page</strong>
+                        <ul class="zh">
+                            <li>补充行业四大核心问题与五大改进路径</li>
+                            <li>新增中小企业落地指南、成本与算力分析</li>
+                            <li>补充工况划分方法与动态基线建立步骤</li>
+                            <li>新增方案边界与非理想性说明</li>
+                            <li>补充故障类型清单、选型建议与FAQ</li>
+                            <li>新增成本、误报率、分阶段效果对比图表</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Added 4 core industry problems and 5 improvement paths</li>
+                            <li>Added SME deployment guide, cost and computing analysis</li>
+                            <li>Added condition classification and dynamic baseline steps</li>
+                            <li>Added limitations and non-ideal condition descriptions</li>
+                            <li>Added fault list, selection advice and FAQ</li>
+                            <li>Added cost, false alarm and phase comparison charts</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">v1.0 · 2026-11-20</div>
+                    <div class="timeline-content">
+                        <strong class="zh">网站正式上线</strong>
+                        <strong class="en" style="display:none">Website first release</strong>
+                        <ul class="zh">
+                            <li>发布机床检修轻量化方案个人站</li>
+                            <li>支持深色/亮色主题切换</li>
+                            <li>支持中英文双语切换</li>
+                            <li>上线首页、方案、技能、留言板、联系页面</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Launched machine tool maintenance project website</li>
+                            <li>Dark / light theme toggle</li>
+                            <li>Chinese / English bilingual support</li>
+                            <li>Home, solution, skills, guestbook and contact pages</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 留言板 -->
+        <section id="guestbook" class="view">
+            <h2 class="section-title zh">留言板</h2>
+            <h2 class="section-title en" style="display:none">Guestbook</h2>
+            <p class="section-subtitle zh">技术交流、方案探讨、合作意向，欢迎留言</p>
+            <p class="section-subtitle en" style="display:none">Leave a message for technical discussion or cooperation</p>
+
+            <div class="guestbook-box fade-in">
+                <p class="data-note zh" id="giscusHint" style="margin-bottom: 1rem;">
+                    留言区由 Giscus 提供（需用 GitHub 账号登录后发言），首次加载约需几秒。
+                </p>
+                <p class="data-note en" id="giscusHintEn" style="display:none; margin-bottom: 1rem;">
+                    Comments are powered by Giscus (sign in with GitHub). First load may take a few seconds.
+                </p>
+                <div class="giscus" id="giscusMount"
+                     data-repo="shanjiji222/website-comments"
+                     data-repo-id="R_kgDOV57oIw"
+                     data-category="General"
+                     data-category-id="DIC_kwDOV57oI84DL3Cp"
+                     data-mapping="pathname"
+                     data-strict="0"
+                     data-reactions-enabled="1"
+                     data-emit-metadata="0"
+                     data-input-position="bottom"
+                     data-theme="preferred_color_scheme"
+                     data-lang="zh-CN"></div>
+            </div>
+        </section>
+
+        <!-- 联系我 -->
+        <section id="contact" class="view">
+            <h2 class="section-title zh">联系我</h2>
+            <h2 class="section-title en" style="display:none">Contact Me</h2>
+            <p class="section-subtitle zh">山己几 · 学生 / 项目灵感创作者</p>
+            <p class="section-subtitle en" style="display:none">Shan Ji Ji · Student / Project Creator</p>
+
+            <div class="contact-grid fade-in">
+                <div class="contact-item">
+                    <div class="icon">📧</div>
+                    <strong class="zh">邮箱</strong>
+                    <strong class="en" style="display:none">Email</strong>
+                    <p><a href="mailto:1714250492@qq.com">1714250492@qq.com</a></p>
+                    <button class="copy-btn" data-value="1714250492@qq.com">
+                        <span class="zh">复制</span><span class="en" style="display:none">Copy</span>
+                    </button>
+                </div>
+                <div class="contact-item">
+                    <div class="icon">💻</div>
+                    <strong class="zh">GitHub</strong>
+                    <strong class="en" style="display:none">GitHub</strong>
+                    <p>
+                        <a href="https://github.com/shanjiji222" target="_blank" rel="noopener noreferrer"
+                           title="在新窗口打开">github.com/shanjiji222</a>
+                    </p>
+                    <button class="copy-btn" data-value="https://github.com/shanjiji222">
+                        <span class="zh">复制链接</span><span class="en" style="display:none">Copy link</span>
+                    </button>
+                </div>
+                <div class="contact-item">
+                    <div class="icon">🟢</div>
+                    <strong class="zh">微信</strong>
+                    <strong class="en" style="display:none">WeChat</strong>
+                    <p class="zh">扫码添加好友</p>
+                    <p class="en" style="display:none">Scan the QR code to add me</p>
+                    <img class="qr" src="wechat-qr.png" alt="微信二维码"
+                         onload="var p=this.nextElementSibling;if(p)p.style.display='none';"
+                         onerror="this.style.display='none';var p=this.nextElementSibling;if(p)p.style.display='flex';">
+                    <div class="qr-ph">
+                        <span class="zh">微信二维码</span>
+                        <span class="en" style="display:none">WeChat QR</span>
+                    </div>
+                    <p class="zh" style="margin-top: 0.6rem;">微信号：<span id="wechatIdText">zzk526422</span></p>
+                    <p class="en" style="display:none; margin-top: 0.6rem;">WeChat ID: <span>zzk526422</span></p>
+                    <button class="copy-btn" data-copy="wechatIdText">
+                        <span class="zh">复制微信号</span><span class="en" style="display:none">Copy ID</span>
+                    </button>
+                </div>
+                <div class="contact-item">
+                    <div class="icon">🐧</div>
+                    <strong class="zh">QQ</strong>
+                    <strong class="en" style="display:none">QQ</strong>
+                    <p class="zh">1714250492</p>
+                    <p class="en" style="display:none">1714250492</p>
+                    <button class="copy-btn" data-value="1714250492">
+                        <span class="zh">复制</span><span class="en" style="display:none">Copy</span>
+                    </button>
+                    <p style="margin-top: 0.5rem;">
+                        <a href="https://wpa.qq.com/msgrd?v=3&amp;uin=1714250492&amp;site=qq&amp;menu=yes"
+                           target="_blank" rel="noopener noreferrer" title="在新窗口打开">
+                            <span class="zh">发起 QQ 会话 →</span><span class="en" style="display:none">Open QQ chat →</span>
+                        </a>
+                    </p>
+                </div>
+                <div class="contact-item">
+                    <div class="icon">💬</div>
+                    <strong class="zh">技术交流</strong>
+                    <strong class="en" style="display:none">Discussion</strong>
+                    <p class="zh">技术问题欢迎在留言板讨论</p>
+                    <p class="en" style="display:none">Leave a message in the guestbook</p>
+                    <p style="margin-top: 0.5rem;">
+                        <a data-view="guestbook" class="discussion-link">
+                            <span class="zh">前往留言板 →</span><span class="en" style="display:none">Go to guestbook →</span>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer>
+        <div class="container">
+            <p class="zh">© 2026 山己几 · 机床检修轻量化方案项目站</p>
+            <p class="en" style="display:none">© 2026 Shan Ji Ji · Lightweight Machine Tool Maintenance Project</p>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+                <a href="LICENSE.txt" target="_blank">Apache License 2.0</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // ========== 路由切换 ==========
+        const navLinks = document.querySelectorAll('.nav-link');
+        const views = document.querySelectorAll('.view');
+
+        function switchView(viewId) {
+            views.forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            navLinks.forEach(l => l.classList.remove('active'));
+            document.querySelectorAll(`[data-view="${viewId}"]`).forEach(l => l.classList.add('active'));
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            // 重新触发入场动画
+            setTimeout(initFadeIn, 100);
+            // 重新渲染图表
+            if(viewId === 'solution') {
+                setTimeout(() => {
+                    initCharts();
+                    window.addEventListener('resize', resizeCharts);
+                }, 100);
+            }
+            // 留言板按需加载
+            if(viewId === 'guestbook') {
+                loadGiscus();
+            }
+        }
+
+        document.querySelectorAll('[data-view]').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                const viewId = el.getAttribute('data-view');
+                switchView(viewId);
+            });
+        });
+
+        // ========== 主题切换 ==========
+        const themeToggle = document.getElementById('themeToggle');
+        let isDark = true;
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            themeToggle.textContent = isDark ? '☾' : '☀';
+            // 重新渲染图表以适配主题
+            if(document.getElementById('solution').classList.contains('active')) {
+                initCharts();
+            }
+            syncGiscusTheme();
+        });
+
+        // ========== 语言切换 ==========
+        const langToggle = document.getElementById('langToggle');
+        let isZh = true;
+        langToggle.addEventListener('click', () => {
+            isZh = !isZh;
+            document.querySelectorAll('.zh').forEach(el => {
+                el.style.display = isZh ? '' : 'none';
+            });
+            document.querySelectorAll('.en').forEach(el => {
+                el.style.display = isZh ? 'none' : '';
+            });
+            langToggle.textContent = isZh ? 'EN' : '中';
+            document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+            if(document.getElementById('solution').classList.contains('active')) {
+                initCharts();
+            }
+        });
+
+        // ========== 联系方式：一键复制 ==========
+        document.querySelectorAll('.copy-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                let text = btn.dataset.value || '';
+                if (!text && btn.dataset.copy) {
+                    const el = document.getElementById(btn.dataset.copy);
+                    if (el) text = el.textContent;
+                }
+                text = (text || '').trim();
+                if (!text || text === '请填写微信号') return;
+
+                const done = function () {
+                    btn.classList.add('done');
+                    const spans = btn.querySelectorAll('span');
+                    spans.forEach(function (s) { s.dataset.old = s.textContent; s.textContent = '已复制'; });
+                    setTimeout(function () {
+                        btn.classList.remove('done');
+                        spans.forEach(function (s) { if (s.dataset.old) s.textContent = s.dataset.old; });
+                    }, 1500);
+                };
+                const fallback = function () {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    try { document.execCommand('copy'); done(); } catch (e) { }
+                    document.body.removeChild(ta);
+                };
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done).catch(fallback);
+                } else {
+                    fallback();
+                }
+            });
+        });
+
+        // ========== 留言板（Giscus 懒加载） ==========
+        function loadGiscus() {
+            const mount = document.getElementById('giscusMount');
+            if (!mount || mount.dataset.loaded === '1') return;
+
+            // 本地双击打开（file://）时 Giscus 无法工作，直接给出提示而不是留白
+            if (location.protocol === 'file:') {
+                const zh = document.getElementById('giscusHint');
+                const en = document.getElementById('giscusHintEn');
+                if (zh) zh.textContent = '当前是本地文件直接打开（file://），留言板无法加载。请用本地服务器（如 VS Code 的 Live Server）打开，或部署到网站后再访问。';
+                if (en) en.textContent = 'Giscus cannot load over file://. Use a local server or a deployed site.';
+                return;
+            }
+
+            mount.dataset.loaded = '1';
+            const s = document.createElement('script');
+            s.src = 'https://giscus.app/client.js';
+            s.async = true;
+            s.setAttribute('crossorigin', 'anonymous');
+            ['repo', 'repo-id', 'category', 'category-id', 'mapping', 'strict',
+                'reactions-enabled', 'emit-metadata', 'input-position', 'theme', 'lang'
+            ].forEach(function (k) {
+                const v = mount.getAttribute('data-' + k);
+                if (v !== null) s.setAttribute('data-' + k, v);
+            });
+            mount.appendChild(s);
+        }
+
+        function syncGiscusTheme() {
+            const f = document.querySelector('iframe.giscus-frame');
+            if (!f || !f.contentWindow) return;
+            f.contentWindow.postMessage(
+                { giscus: { setConfig: { theme: isDark ? 'dark' : 'light' } } },
+                'https://giscus.app'
+            );
+        }
+
+        // ========== 技能词条：点击展开技术说明 ==========
+        // 每个词条说明三块：技术方位 / 在本项目中的主体作用 / 学习渠道
+        const SKILL_DETAIL = {
+            python: {
+                tag: "编程语言", role: "贯穿全栈",
+                desc: "数据处理、特征计算与模型训练脚本的统一实现语言",
+                points: [
+                    "替代人工在表格中逐台整理振动与电流数据",
+                    "解决不同机床数据格式不一致、脚本无法复用的问题",
+                    "输出清洗后的特征数据集与可复现的训练脚本"
+                ],
+                links: [
+                    { t: "文档", title: "Python 3 官方文档", org: "Python Software Foundation", url: "https://docs.python.org/zh-cn/3/" },
+                    { t: "文档", title: "NumPy 官方文档", org: "NumPy Developers", url: "https://numpy.org/doc/stable/" }
+                ]
+            },
+            cpp: {
+                tag: "编程语言", role: "承载实现",
+                desc: "边缘端实时采集与推理的高性能实现，解决脚本层时延不足的问题",
+                points: [
+                    "替代 Python 脚本在采集卡上的高延迟轮询",
+                    "解决高采样率下的丢帧与内存抖动",
+                    "输出可烧录到边缘设备的采集与推理程序"
+                ],
+                links: [
+                    { t: "文档", title: "GCC 官方文档", org: "GNU Project", url: "https://gcc.gnu.org/onlinedocs/" },
+                    { t: "文档", title: "cppreference", org: "cppreference", url: "https://en.cppreference.com/w/" }
+                ]
+            },
+            ml: {
+                tag: "数据分析", role: "环节专用",
+                desc: "从特征到故障判定的建模环节，提供分类与异常判别能力",
+                points: [
+                    "替代人工设定固定阈值的判定方式",
+                    "解决早期故障特征微弱、单阈值误报率高的问题",
+                    "输出分类模型与单次判定的置信度"
+                ],
+                links: [
+                    { t: "文档", title: "scikit-learn 用户指南", org: "scikit-learn 开发团队", url: "https://scikit-learn.org/stable/user_guide.html" },
+                    { t: "文档", title: "PyTorch 官方文档", org: "PyTorch Foundation", url: "https://pytorch.org/docs/stable/" }
+                ]
+            },
+            signal: {
+                tag: "信号处理", role: "环节专用",
+                desc: "分析层前置环节，从原始振动、电流时序中提取可用于判定的特征量",
+                points: [
+                    "替代人工逐段查看波形、凭经验判断工况与异常",
+                    "解决特征提取口径不一、早期微弱故障易漏判的问题",
+                    "输出各工况片段的标准化特征向量"
+                ],
+                links: [
+                    { t: "课程", title: "数字信号处理", org: "北京交通大学 · 中国大学MOOC", url: "https://www.icourse163.org/course/UESTC-1001950001" },
+                    { t: "文档", title: "Signal processing (scipy.signal)", org: "SciPy", url: "https://docs.scipy.org/doc/scipy/reference/signal.html" },
+                    { t: "文档", title: "PyWavelets Documentation", org: "PyWavelets 项目团队", url: "https://pywavelets.readthedocs.io/" }
+                ]
+            },
+            feature: {
+                tag: "数据分析", role: "环节专用",
+                desc: "把时域、频域与小波特征组装成可训练的特征集，决定模型上限",
+                points: [
+                    "替代凭经验挑选指标的做法",
+                    "解决特征冗余、量纲不一导致的模型不稳定",
+                    "输出带标签的特征表与筛选说明"
+                ],
+                links: [
+                    { t: "文档", title: "pandas 用户指南", org: "pandas 开发团队", url: "https://pandas.pydata.org/docs/user_guide/" },
+                    { t: "文档", title: "Preprocessing data", org: "scikit-learn", url: "https://scikit-learn.org/stable/modules/preprocessing.html" }
+                ]
+            },
+            anomaly: {
+                tag: "数据分析", role: "环节专用",
+                desc: "在故障样本极少甚至没有的条件下，识别偏离基线状态的工况",
+                points: [
+                    "替代只看单一阈值、越限才报警的做法",
+                    "解决故障样本稀缺、无法按监督学习训练的问题",
+                    "输出异常分数与分级告警"
+                ],
+                links: [
+                    { t: "文档", title: "Novelty and Outlier Detection", org: "scikit-learn", url: "https://scikit-learn.org/stable/modules/outlier_detection.html" },
+                    { t: "文档", title: "PyOD Documentation", org: "PyOD 项目", url: "https://pyod.readthedocs.io/en/latest/" }
+                ]
+            },
+            edge: {
+                tag: "工业与嵌入式", role: "承载实现",
+                desc: "把预处理与推理下沉到车间网关，减少原始数据回传与响应延迟",
+                points: [
+                    "替代把原始波形全量上传云端处理的方式",
+                    "解决车间网络不稳、带宽与流量成本高的问题",
+                    "输出网关侧的预处理与推理服务"
+                ],
+                links: [
+                    { t: "文档", title: "ONNX Runtime 文档", org: "Microsoft", url: "https://onnxruntime.ai/docs/" },
+                    { t: "文档", title: "Embedded Computing", org: "NVIDIA", url: "https://developer.nvidia.com/embedded-computing" }
+                ]
+            },
+            opcua: {
+                tag: "通信协议", role: "环节专用",
+                desc: "传输层协议，负责从数控系统读取主轴转速、进给与程序号等工况信号",
+                points: [
+                    "替代人工抄录机床状态与加工参数",
+                    "解决不同品牌数控系统接口互不兼容的问题",
+                    "输出与振动数据对齐的工况时间戳"
+                ],
+                links: [
+                    { t: "学会", title: "OPC Foundation", org: "OPC Foundation", url: "https://opcfoundation.org/" },
+                    { t: "标准", title: "OPC UA Online Reference", org: "OPC Foundation", url: "https://reference.opcfoundation.org/" }
+                ]
+            },
+            sensor: {
+                tag: "工业与嵌入式", role: "环节专用",
+                desc: "感知层基础环节，负责振动、电流、温度的多通道同步采样与打标",
+                points: [
+                    "替代人工巡检抄表与事后补录",
+                    "解决多通道不同步导致的特征错位",
+                    "输出带时间戳的多通道原始数据"
+                ],
+                links: [
+                    { t: "文档", title: "NI 官方文档中心", org: "NI（National Instruments）", url: "https://www.ni.com/docs/" }
+                ]
+            },
+            vibration: {
+                tag: "信号处理", role: "环节专用",
+                desc: "以振动信号的时域与频域特征反映主轴、轴承与刀具的状态变化",
+                points: [
+                    "替代用听音棒与手感判断轴承异响的经验做法",
+                    "解决早期磨损肉眼与听觉都难以察觉的问题",
+                    "输出振动烈度与各特征频率的幅值"
+                ],
+                links: [
+                    { t: "标准", title: "GB/T 6075.1-2012 机械振动 在非旋转部件上测量评价机器的振动 第1部分：总则", org: "国家标准全文公开系统", url: "https://openstd.samr.gov.cn/bzgk/std/newGbInfo?hcno=C6D9EEB23053650AF6667535FD2E33EF" }
+                ]
+            },
+            arm: {
+                tag: "工业与嵌入式", role: "承载实现",
+                desc: "在 ARM 边缘设备上实现采集、预处理与轻量推理的程序开发",
+                points: [
+                    "替代工控机方案的高功耗与高成本",
+                    "解决现场无风扇、宽温环境下的稳定运行",
+                    "输出可量产部署的边缘采集终端"
+                ],
+                links: [
+                    { t: "文档", title: "Arm Developer Documentation", org: "Arm", url: "https://developer.arm.com/documentation/" }
+                ]
+            },
+            web: {
+                tag: "可视化", role: "承载实现",
+                desc: "构建检测结果看板的页面结构与交互逻辑",
+                points: [
+                    "替代导出报表再人工汇总的环节",
+                    "解决多台设备数据分散、无法同屏对比的问题",
+                    "输出可下钻到单台设备的健康看板"
+                ],
+                links: [
+                    { t: "文档", title: "JavaScript | MDN", org: "Mozilla", url: "https://developer.mozilla.org/zh-CN/docs/Web/JavaScript" },
+                    { t: "标准", title: "HTML Standard", org: "WHATWG", url: "https://html.spec.whatwg.org/multipage/" }
+                ]
+            },
+            echarts: {
+                tag: "可视化", role: "承载实现",
+                desc: "看板中的趋势图、频谱图与仪表盘由该库渲染",
+                points: [
+                    "替代静态截图式报表",
+                    "解决数据刷新后图表需要重画的问题",
+                    "输出可实时刷新的图表配置"
+                ],
+                links: [
+                    { t: "文档", title: "Apache ECharts", org: "Apache 软件基金会", url: "https://echarts.apache.org/zh/" },
+                    { t: "文档", title: "ECharts  handbook 快速上手", org: "Apache 软件基金会", url: "https://echarts.apache.org/handbook/zh/get-started/" }
+                ]
+            },
+            dataviz: {
+                tag: "可视化", role: "环节专用",
+                desc: "把特征与判定结果编码为图形，让维修人员不读数字也能判断状态",
+                points: [
+                    "替代在原始曲线上逐点比对阈值",
+                    "解决异常时段定位慢、跨设备不可比的问题",
+                    "输出设备健康趋势图与报警时间轴"
+                ],
+                links: [
+                    { t: "标准", title: "SVG（可缩放矢量图形）", org: "W3C", url: "https://www.w3.org/Graphics/SVG/" },
+                    { t: "文档", title: "D3.js 官方文档", org: "D3 项目", url: "https://d3js.org/" }
+                ]
+            },
+            responsive: {
+                tag: "可视化", role: "环节专用",
+                desc: "让看板在车间平板、手机与工控大屏上都能正常显示",
+                points: [
+                    "替代为不同屏幕各做一套页面",
+                    "解决现场用手机查看时的错位与横向滚动",
+                    "输出一套自适应布局"
+                ],
+                links: [
+                    { t: "文档", title: "响应式设计 | MDN", org: "Mozilla", url: "https://developer.mozilla.org/zh-CN/docs/Learn/CSS/CSS_layout/Responsive_Design" },
+                    { t: "标准", title: "CSS 标准", org: "W3C", url: "https://www.w3.org/Style/CSS/" }
+                ]
+            },
+            requirement: {
+                tag: "通用能力", role: "通用能力",
+                desc: "把车间实际痛点转成可验收的功能清单，作用于项目启动环节",
+                points: [
+                    "替代凭印象提需求的推进方式",
+                    "解决需求反复变更导致的返工",
+                    "输出需求清单与验收标准"
+                ],
+                links: [
+                    { t: "学会", title: "Software Engineering Body of Knowledge (SWEBOK)", org: "IEEE Computer Society", url: "https://www.computer.org/education/bodies-of-knowledge/software-engineering" }
+                ]
+            },
+            solution: {
+                tag: "通用能力", role: "通用能力",
+                desc: "在需求与实现之间给出技术路线、边界与取舍",
+                points: [
+                    "替代边做边改的试错推进",
+                    "解决多方对方案理解不一致的问题",
+                    "输出技术路线图与接口说明"
+                ],
+                links: [
+                    { t: "学会", title: "INCOSE（国际系统工程协会）", org: "INCOSE", url: "https://www.incose.org/" }
+                ]
+            },
+            docwriting: {
+                tag: "通用能力", role: "通用能力",
+                desc: "把方案与实验结论写成他人可复现的文档，作用于交付与评审环节",
+                points: [
+                    "替代口头交接与零散笔记",
+                    "解决方案评审时无法自证依据的问题",
+                    "输出方案书、实验报告与操作手册"
+                ],
+                links: [
+                    { t: "文档", title: "IEEE Author Center", org: "IEEE", url: "https://ieeeauthorcenter.ieee.org/" },
+                    { t: "文档", title: "Microsoft 写作风格指南", org: "Microsoft", url: "https://learn.microsoft.com/zh-cn/style-guide/welcome/" }
+                ]
+            },
+            survey: {
+                tag: "通用能力", role: "通用能力",
+                desc: "进车间记录工序、节拍与故障处理流程，为方案提供事实依据",
+                points: [
+                    "替代坐在办公室推测现场情况",
+                    "解决方案与实际工序脱节的问题",
+                    "输出工序记录、故障台账与访谈纪要"
+                ],
+                links: [
+                    { t: "学会", title: "中国机械工程学会", org: "中国机械工程学会", url: "https://www.cmes.org/" }
+                ]
+            }
+        };
+
+        const SKILL_KEY = {
+            "Python": "python", "C++": "cpp", "机器学习": "ml", "信号处理": "signal",
+            "特征工程": "feature", "异常检测": "anomaly", "边缘计算": "edge", "OPC UA": "opcua",
+            "传感器数据采集": "sensor", "振动分析": "vibration", "ARM 开发": "arm",
+            "HTML / CSS / JS": "web", "ECharts": "echarts", "数据可视化": "dataviz",
+            "响应式设计": "responsive", "需求分析": "requirement", "方案设计": "solution",
+            "技术文档撰写": "docwriting", "工业场景调研": "survey"
+        };
+
+        function buildSkillPanel(d) {
+            const wrap = document.createElement('div');
+            wrap.className = 'skill-detail';
+
+            const note = document.createElement('p');
+            note.className = 'note';
+            note.textContent = '以下链接均为外部权威来源，访问需联网。';
+
+            const pos = document.createElement('p');
+            pos.className = 'pos';
+            [d.tag, d.role].forEach(function (t) {
+                const c = document.createElement('span');
+                c.className = 'chip';
+                c.textContent = t;
+                pos.appendChild(c);
+            });
+            pos.appendChild(document.createTextNode(d.desc));
+
+            const ul = document.createElement('ul');
+            d.points.forEach(function (x) {
+                const li = document.createElement('li');
+                li.textContent = x;
+                ul.appendChild(li);
+            });
+
+            const learn = document.createElement('div');
+            learn.className = 'skill-learn';
+            d.links.forEach(function (l) {
+                const a = document.createElement('a');
+                a.href = l.url;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.title = '在新窗口打开';
+                const tg = document.createElement('span');
+                tg.className = 'type';
+                tg.textContent = l.t;
+                a.appendChild(tg);
+                a.appendChild(document.createTextNode(l.title + ' · ' + l.org));
+                learn.appendChild(a);
+            });
+
+            wrap.appendChild(note);
+            wrap.appendChild(pos);
+            wrap.appendChild(ul);
+            wrap.appendChild(learn);
+            return wrap;
+        }
+
+        function enhanceSkillTags() {
+            const tags = document.querySelectorAll('#skills .skill-tags > .skill-tag');
+            tags.forEach(function (el) {
+                if (el.tagName !== 'SPAN') return;
+                const name = el.textContent.trim();
+                const key = SKILL_KEY[name];
+                const data = key && SKILL_DETAIL[key];
+                if (!data) return;
+
+                const d = document.createElement('details');
+                d.className = 'skill-item';
+                d.name = 'skill';
+                d.id = 'skill-' + key;
+
+                const s = document.createElement('summary');
+                s.className = 'skill-tag';
+                s.textContent = name;
+                const plus = document.createElement('i');
+                plus.className = 'plus';
+                plus.textContent = '+';
+                plus.setAttribute('aria-hidden', 'true');
+                s.appendChild(plus);
+
+                d.appendChild(s);
+                d.appendChild(buildSkillPanel(data));
+                el.replaceWith(d);
+            });
+        }
+
+        // 单开兜底：name 属性在旧浏览器无效时，手动关闭其它项
+        document.addEventListener('toggle', function (e) {
+            const t = e.target;
+            if (!t.classList || !t.classList.contains('skill-item') || !t.open) return;
+            document.querySelectorAll('details.skill-item[open]').forEach(function (o) {
+                if (o !== t) o.open = false;
+            });
+        }, true);
+
+        // ESC 关闭并归还焦点
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const open = document.querySelector('details.skill-item[open]');
+            if (!open) return;
+            const s = open.querySelector('summary');
+            open.open = false;
+            if (s) s.focus();
+        });
+
+        // 点击面板外部关闭
+        document.addEventListener('click', function (e) {
+            const open = document.querySelector('details.skill-item[open]');
+            if (!open) return;
+            if (open.contains(e.target)) return;
+            open.open = false;
+        });
+
+        // 切换语言时收起，避免中文说明出现在英文界面
+        document.getElementById('langToggle').addEventListener('click', function () {
+            document.querySelectorAll('details.skill-item[open]').forEach(function (o) {
+                o.open = false;
+            });
+        });
+
+        // ========== FAQ 折叠 ==========
+        document.querySelectorAll('.faq-question').forEach(q => {
+            q.addEventListener('click', () => {
+                q.parentElement.classList.toggle('open');
+            });
+        });
+
+        // ========== 入场动画 ==========
+        function initFadeIn() {
+            const fadeEls = document.querySelectorAll('.view.active .fade-in');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if(entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, {threshold: 0.1});
+            fadeEls.forEach(el => observer.observe(el));
+        }
+
+        // ========== 图表渲染 ==========
+        let costChart, alarmChart, phaseChart;
+
+        function getChartThemeColors() {
+            const isDarkTheme = isDark;
+            return {
+                text: isDarkTheme ? '#e5e7eb' : '#0f172a',
+                subtext: isDarkTheme ? '#9ca3af' : '#64748b',
+                grid: isDarkTheme ? '#1f2937' : '#e2e8f0',
+                accent: '#3b82f6',
+                second: '#10b981',
+                third: '#f59e0b'
+            };
+        }
+
+        function initCharts() {
+            const colors = getChartThemeColors();
+
+            // 成本对比图
+            costChart = echarts.init(document.getElementById('costChart'));
+            costChart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: isZh 
+                        ? ['传统大型系统\n全厂部署', '轻量化方案\n单厂覆盖', '轻量化方案\n单点试点']
+                        : ['Traditional\nFull Factory', 'Lightweight\nFull Plant', 'Lightweight\nSingle Pilot'],
+                    axisLabel: { color: colors.text },
+                    axisLine: { lineStyle: { color: colors.grid } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: isZh ? '成本（万元）' : 'Cost (10k CNY)',
+                    axisLabel: { color: colors.text },
+                    nameTextStyle: { color: colors.subtext },
+                    splitLine: { lineStyle: { color: colors.grid } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: [25, 5, 0.8],
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: '#3b82f6' },
+                            { offset: 1, color: '#06b6d4' }
+                        ]),
+                        borderRadius: [6, 6, 0, 0]
+                    },
+                    barWidth: '40%',
+                    animationDuration: 1500,
+                    animationEasing: 'cubicOut'
+                }]
+            });
+
+            // 误报率对比图
+            alarmChart = echarts.init(document.getElementById('alarmChart'));
+            alarmChart.setOption({
+                tooltip: { trigger: 'axis' },
+                grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: isZh ? ['固定阈值监控', '工况感知动态基线'] : ['Fixed Threshold', 'Condition-Aware Baseline'],
+                    axisLabel: { color: colors.text },
+                    axisLine: { lineStyle: { color: colors.grid } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: isZh ? '误报率（%）' : 'False Alarm Rate (%)',
+                    max: 40,
+                    axisLabel: { color: colors.text },
+                    nameTextStyle: { color: colors.subtext },
+                    splitLine: { lineStyle: { color: colors.grid } }
+                },
+                series: [{
+                    type: 'bar',
+                    data: [35, 8],
+                    itemStyle: {
+                        color: function(params) {
+                            return params.dataIndex === 0 ? '#ef4444' : '#10b981';
+                        },
+                        borderRadius: [6, 6, 0, 0]
+                    },
+                    barWidth: '40%',
+                    animationDuration: 1500
+                }]
+            });
+
+            // 分阶段效果趋势图
+            phaseChart = echarts.init(document.getElementById('phaseChart'));
+            phaseChart.setOption({
+                tooltip: { trigger: 'axis' },
+                legend: {
+                    data: isZh ? ['停机损失降低比例', '方案成熟度'] : ['Downtime Loss Reduction', 'Solution Maturity'],
+                    textStyle: { color: colors.text },
+                    bottom: 0
+                },
+                grid: { left: '3%', right: '4%', bottom: '15%', top: '10%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: isZh 
+                        ? ['阶段一\n基线体检', '阶段二\n故障分类', '阶段三\n寿命预测']
+                        : ['Phase 1\nBaseline', 'Phase 2\nFault Classification', 'Phase 3\nRUL Prediction'],
+                    axisLabel: { color: colors.text },
+                    axisLine: { lineStyle: { color: colors.grid } }
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: isZh ? '降低比例（%）' : 'Reduction (%)',
+                        max: 50,
+                        axisLabel: { color: colors.text },
+                        nameTextStyle: { color: colors.subtext },
+                        splitLine: { lineStyle: { color: colors.grid } }
+                    },
+                    {
+                        type: 'value',
+                        name: isZh ? '成熟度' : 'Maturity',
+                        max: 100,
+                        axisLabel: { color: colors.text },
+                        nameTextStyle: { color: colors.subtext },
+                        splitLine: { show: false }
+                    }
+                ],
+                series: [
+                    {
+                        name: isZh ? '停机损失降低比例' : 'Downtime Loss Reduction',
+                        type: 'bar',
+                        data: [15, 32, 45],
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#3b82f6' },
+                                { offset: 1, color: '#06b6d4' }
+                            ]),
+                            borderRadius: [6, 6, 0, 0]
+                        },
+                        animationDuration: 1500
+                    },
+                    {
+                        name: isZh ? '方案成熟度' : 'Solution Maturity',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        data: [40, 70, 95],
+                        smooth: true,
+                        lineStyle: { color: '#f59e0b', width: 3 },
+                        itemStyle: { color: '#f59e0b' },
+                        symbolSize: 8,
+                        animationDuration: 2000
+                    }
+                ]
+            });
+        }
+
+        function resizeCharts() {
+            if(costChart) costChart.resize();
+            if(alarmChart) alarmChart.resize();
+            if(phaseChart) phaseChart.resize();
+        }
+
+        // ========== 初始化 ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            initFadeIn();
+            enhanceSkillTags();
+            // 默认首页不加载图表，切换到方案页再加载
+        });
+    </script>
+</body>
+</html>
