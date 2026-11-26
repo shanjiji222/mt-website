@@ -732,6 +732,48 @@
             transform: translateY(0);
         }
     </style>
+    <style id="proto-card-style">
+        /* 协议卡片：复用站点 details/summary 展开习惯，作用域限定在 .proto-* */
+        .proto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            margin: 1.4rem 0 0.5rem;
+        }
+        .proto-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: border-color .2s, transform .2s;
+        }
+        .proto-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .proto-card[open] { border-color: var(--accent); }
+        .proto-card > summary {
+            list-style: none; cursor: pointer;
+            display: flex; align-items: center; gap: .65rem;
+            padding: 1rem 1.2rem; font-weight: 600;
+        }
+        .proto-card > summary::-webkit-details-marker { display: none; }
+        .proto-ico {
+            width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg); border: 1px solid var(--border); font-size: .9rem;
+        }
+        .proto-name { font-size: 1rem; letter-spacing: .02em; }
+        .proto-hint { font-weight: 400; font-size: .8rem; opacity: .62; }
+        .proto-plus { margin-left: auto; font-style: normal; opacity: .5; transition: transform .2s; }
+        .proto-card[open] .proto-plus { transform: rotate(45deg); }
+        .proto-body {
+            padding: .9rem 1.2rem 1.1rem;
+            border-top: 1px solid var(--border);
+            font-size: .9rem; line-height: 1.85;
+            animation: detailIn .18s ease;
+        }
+        .proto-body ul { margin: .2rem 0 0; padding-left: 1.15rem; }
+        .proto-body li { margin-bottom: .28rem; }
+        .proto-note { margin-top: .75rem; font-size: .84rem; opacity: .75; }
+        .proto-note strong { color: var(--accent); }
+    </style>
 </head>
 <body data-theme="dark">
     <!-- 导航栏 -->
@@ -1105,6 +1147,89 @@
                     </li>
                 </div>
 
+                <div class="proto-grid">
+                    <details class="proto-card">
+                        <summary>
+                            <span class="proto-ico">🔌</span>
+                            <span class="proto-name">OPC UA</span>
+                            <span class="proto-hint zh">通用性最好 · 点击展开可读信号</span>
+                            <span class="proto-hint en" style="display:none">Most universal · click to expand</span>
+                            <i class="proto-plus">+</i>
+                        </summary>
+                        <div class="proto-body">
+                            <div class="zh">
+                                <ul>
+                                    <li>主轴负载、主轴转速</li>
+                                    <li>各轴坐标</li>
+                                    <li>电机电流 / 温度</li>
+                                    <li>刀具寿命</li>
+                                    <li>当前加工程序名</li>
+                                    <li>报警信息</li>
+                                </ul>
+                                <p class="proto-note">
+                                    通用性最好、跨品牌可用；前提是厂家已激活 OPC UA Server（常见需授权），且点表要逐项确认，不要停在"支持 OPC UA"这句话上。
+                                </p>
+                            </div>
+                            <div class="en" style="display:none">
+                                <ul>
+                                    <li>Spindle load, spindle speed</li>
+                                    <li>Axis positions</li>
+                                    <li>Motor current / temperature</li>
+                                    <li>Tool life</li>
+                                    <li>Current NC program name</li>
+                                    <li>Alarm messages</li>
+                                </ul>
+                                <p class="proto-note">
+                                    The most universal, cross-brand option — provided the vendor has enabled the OPC UA server (often licensed) and the tag list is confirmed item by item. Do not stop at "it supports OPC UA".
+                                </p>
+                            </div>
+                        </div>
+                    </details>
+                    <details class="proto-card">
+                        <summary>
+                            <span class="proto-ico">🏭</span>
+                            <span class="proto-name">FOCAS</span>
+                            <span class="proto-hint zh">发那科专用 · 可读程序段号</span>
+                            <span class="proto-hint en" style="display:none">FANUC specific · reads program segments</span>
+                            <i class="proto-plus">+</i>
+                        </summary>
+                        <div class="proto-body">
+                            <div class="zh">
+                                <ul>
+                                    <li>主轴实际转速与负载</li>
+                                    <li>进给速度实际值与倍率</li>
+                                    <li>当前程序段号、刀具号</li>
+                                    <li>报警代码</li>
+                                    <li>伺服电机温度</li>
+                                    <li>PMC 变量</li>
+                                </ul>
+                                <p class="proto-note">
+                                    发那科官方另提供 MTConnect Server，通过 FOCAS 协议把数据转成标准格式输出，可读取主轴转速、负载、轴位置、报警等。
+                                </p>
+                                <p class="proto-note">
+                                    <strong>程序段号对工况划分极有价值：</strong>程序编制规范时，不同段号对应不同工序，可直接映射到粗加工 / 精加工，不必靠电流反推。
+                                </p>
+                            </div>
+                            <div class="en" style="display:none">
+                                <ul>
+                                    <li>Actual spindle speed and load</li>
+                                    <li>Actual feed rate and override</li>
+                                    <li>Current program segment number, tool number</li>
+                                    <li>Alarm codes</li>
+                                    <li>Servo motor temperature</li>
+                                    <li>PMC variables</li>
+                                </ul>
+                                <p class="proto-note">
+                                    FANUC also offers an official MTConnect Server that converts data into a standard format over FOCAS, exposing spindle speed, load, axis position, alarms and more.
+                                </p>
+                                <p class="proto-note">
+                                    <strong>Program segment numbers are gold for condition classification:</strong> with well-structured programs, each segment maps to a machining step, so rough and finish passes can be labelled directly instead of inferred from current.
+                                </p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
                 <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="zh">二、动态基线建立四步法</h4>
                 <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="en" style="display:none">2. Four Steps to Build Dynamic Baseline</h4>
                 <div class="step-list zh">
@@ -1142,6 +1267,116 @@
                         <strong>Update baseline periodically</strong>
                         Recalculate quarterly or after major maintenance. Sudden drift itself signals changing machine condition.
                     </li>
+                </div>
+            </div>
+
+            <!-- 切虚为实：基线的真值来自人 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">切虚为实：基线不是算出来的数字，是车间认的判据</h3>
+                <h3 class="block-title en" style="display:none">Making It Real: A Baseline Is a Judgement the Shop Floor Accepts</h3>
+
+                <p class="zh">
+                    「均值 ± 3σ」只回答「偏离了多少」，不回答「这算不算坏」。统计基线是「虚」的——它由健康期数据算出来，只描述波动范围；
+                    而设备真的开始坏，是「实」的。把两者接起来的真值参照，不是模型，是人：老师傅的耳朵和手。
+                </p>
+                <p class="en" style="display:none">
+                    Mean ± 3σ tells you how far it drifted, not whether that drift is bad. A statistical baseline is virtual: a band computed
+                    from healthy data. A machine actually degrading is real. The only reliable ground truth connecting the two is not a model —
+                    it is the ear and the hand of the veteran technician.
+                </p>
+
+                <div class="grid-3" style="margin-top:1.5rem">
+                    <div class="card success">
+                        <div class="card-icon">👂</div>
+                        <h3 class="zh">1. 让老师傅参与基线建设</h3>
+                        <h3 class="en" style="display:none">1. Bring the veteran into baseline building</h3>
+                        <ul class="zh">
+                            <li>健康期采数据、建基线的那几周，请维修师傅同步记录他们凭经验觉得「声音不对」「温度偏高」的时刻</li>
+                            <li>把这些时刻的数据片段单独标注、单独存放</li>
+                            <li>如果这些「感觉不对」的片段，在统计基线里居然属于「正常范围」——说明基线建错了，或者特征选错了</li>
+                            <li>老师傅的耳朵和手，是最便宜也最准的验证集</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>During healthy-period collection, ask the technician to log every moment they feel something is off — "the sound is wrong", "this is running hot"</li>
+                            <li>Tag and store those segments separately</li>
+                            <li>If a flagged segment falls inside your computed "normal range", the baseline is wrong — or the features are</li>
+                            <li>The veteran's ear and hand are the cheapest, most accurate validation set you will get</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">🧑‍🔧</div>
+                        <h3 class="zh">2. 从第一天就让维修工进项目组</h3>
+                        <h3 class="en" style="display:none">2. Put a maintenance worker in the team from day one</h3>
+                        <ul class="zh">
+                            <li>项目组里必须有一个懂这台机床、说话维修工愿意听的人</li>
+                            <li>他的任务不是写代码，而是每当系统报警时，带着维修工一起去现场验证</li>
+                            <li>人不在组里，基线只能靠「看着正常」的数据盲建——采回来的全是好数据，验不出坏的样子</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>The team must include someone who knows this machine and whom the crew actually listens to</li>
+                            <li>His job is not to write code, but to walk to the machine with the crew every time the system alarms</li>
+                            <li>Without him the baseline is built blind from data that "looks normal" — you only collect healthy samples, never what degradation looks like</li>
+                        </ul>
+                    </div>
+                    <div class="card success">
+                        <div class="card-icon">🚨</div>
+                        <h3 class="zh">3. 前三次报警决定系统生死</h3>
+                        <h3 class="en" style="display:none">3. The first three alarms decide whether the system survives</h3>
+                        <ul class="zh">
+                            <li>前三次报警的处理质量，决定了这套系统在车间里能不能活</li>
+                            <li>三次都是误报、且没人解释为什么，后面就没人信了——看板会被关掉，传感器会被拔掉</li>
+                            <li>所以前三次必须做到：当场验证、当天记录原话、给出可复述的原因</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>How those first three alarms are handled decides whether the system lives or dies on the floor</li>
+                            <li>Three false alarms with no explanation and nobody trusts it again — the dashboard gets muted, the sensor gets unplugged</li>
+                            <li>So: verify on the spot, record the exact words the same day, and give a reason the crew can repeat</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="zh">怎么落地：三步把它做实</h4>
+                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="en" style="display:none">How to make it real: three steps</h4>
+                <div class="step-list zh">
+                    <li>
+                        <strong>同步建「手感日志」</strong>
+                        采集期就让师傅跟着上机，记下时间点、他的原话（「嗡的一声」「这块烫手」），以及他的判断：不对 / 正常 / 存疑。
+                    </li>
+                    <li>
+                        <strong>每次报警双签</strong>
+                        维修工与项目组共同签字，写下现场结论的原话，不接受事后转述——「主轴异响」这种概括，丢掉的正是特征线索。
+                    </li>
+                    <li>
+                        <strong>结论回灌并留版本</strong>
+                        确认过的片段转成正/负样本，重算基线，连同配置指纹（静默期、持续判定点数、特征集）一起归档；旧版本可回滚。
+                    </li>
+                </div>
+                <div class="step-list en" style="display:none">
+                    <li>
+                        <strong>Keep a hands-on log during collection</strong>
+                        Have the technician walk the machine during collection; record the timestamp, his exact words ("a hum", "this is hot"), and his call: abnormal / normal / unsure.
+                    </li>
+                    <li>
+                        <strong>Co-sign every alarm</strong>
+                        Maintenance worker and project team sign together, with the on-site conclusion in the worker's own words. Summaries like "spindle noise" throw away exactly the feature clues you need.
+                    </li>
+                    <li>
+                        <strong>Feed conclusions back, keep versions</strong>
+                        Turn confirmed segments into positive/negative samples, recompute the baseline, and archive it with its configuration fingerprint (silence window, persistence count, feature set). Old versions stay rollback-able.
+                    </li>
+                </div>
+
+                <div class="card warning" style="margin-top:1.5rem">
+                    <p class="zh">
+                        <strong>这条路的代价要说清：</strong>它不减少人的工作量，前期反而增加——换来的是基线的可信度。
+                        基线不可信，后面所有阈值、模型、寿命预测，都是在错的地基上做装修。
+                        这也是下一节「方案边界与非理想性」的前置条件：能落地的方案，必须先承认「有人在环路里」。
+                    </p>
+                    <p class="en" style="display:none">
+                        <strong>Be honest about the cost:</strong> this does not reduce human effort — early on it increases it. What it buys is a baseline you can trust.
+                        If the baseline is not trustworthy, every threshold, model and RUL estimate after it is decoration on a broken foundation.
+                        It is also the precondition for the next section: any deployable solution has to admit that a human stays in the loop.
+                    </p>
                 </div>
             </div>
 
@@ -1397,6 +1632,25 @@
             <p class="section-subtitle en" style="display:none">Project and website iteration records</p>
 
             <div class="timeline fade-in">
+                <div class="timeline-item">
+                    <div class="timeline-date">v1.3 · 2026-11-26</div>
+                    <div class="timeline-content">
+                        <strong class="zh">方案深化：切虚为实 + 协议卡片</strong>
+                        <strong class="en" style="display:none">Deepened solution: making-it-real + protocol cards</strong>
+                        <ul class="zh">
+                            <li>新增「切虚为实：基线不是算出来的数字，是车间认的判据」一节，位置在动态基线建立与方案边界之间</li>
+                            <li>该节含老师傅参与建基线、维修工首日入组、前三次报警双签三条做法，以及「手感日志 → 双签 → 回灌留版本」的落地路径</li>
+                            <li>核心技术实现「一、首选：直接读取数控系统信号」新增 OPC UA 与 FOCAS 两张可点开的协议卡片</li>
+                            <li>卡片点击后展开该协议可读取的信号清单；FOCAS 卡另含 MTConnect 转换说明与「程序段号 → 粗/精加工」的判断</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Added a new section, "Making It Real: a baseline is a judgement the shop floor accepts", between the dynamic baseline and limitations blocks</li>
+                            <li>It covers veteran-in-the-loop baseline building, a maintenance worker from day one, co-signing the first three alarms, and the hands-on-log → co-sign → feedback-with-versioning workflow</li>
+                            <li>Added two collapsible protocol cards (OPC UA and FOCAS) under "First choice: read CNC signals directly"</li>
+                            <li>Each card expands to its readable-signal list; the FOCAS card adds MTConnect conversion notes and the "program segment → rough / finish pass" mapping</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="timeline-item">
                     <div class="timeline-date">v1.2 · 2026-11-25</div>
                     <div class="timeline-content">
