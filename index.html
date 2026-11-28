@@ -774,6 +774,28 @@
         .proto-note { margin-top: .75rem; font-size: .84rem; opacity: .75; }
         .proto-note strong { color: var(--accent); }
     </style>
+    <style id="faq-long-style">
+        /* 长答案词条：解除 500px 截断，仅作用于 .faq-long，不影响其他问答 */
+        .faq-item.faq-long.open .faq-answer { max-height: 8000px; }
+        .faq-long .faq-answer ul { margin: .5rem 0 .9rem; padding-left: 1.15rem; }
+        .faq-long .faq-answer li { margin-bottom: .45rem; line-height: 1.85; }
+        .faq-long .faq-answer li strong { color: var(--accent); }
+        .faq-long .faq-answer .faq-h {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: .95rem;
+            margin: 1.1rem 0 .35rem;
+            letter-spacing: .01em;
+        }
+        /* 嵌套一层：信号分类清单，用空心圆与更紧的间距区分层级 */
+        .faq-long .faq-answer ul ul {
+            margin: .4rem 0 .2rem;
+            padding-left: 1.1rem;
+            list-style: circle;
+        }
+        .faq-long .faq-answer ul ul li { margin-bottom: .32rem; }
+        .faq-long .faq-answer ul ul li strong { color: var(--accent); opacity: .92; }
+    </style>
 </head>
 <body data-theme="dark">
     <!-- 导航栏 -->
@@ -1113,8 +1135,8 @@
 
             <!-- 工况划分与动态基线 -->
             <div class="solution-block fade-in">
-                <h3 class="block-title zh">核心技术实现：工况划分与动态基线</h3>
-                <h3 class="block-title en" style="display:none">Core Tech: Condition Classification & Dynamic Baseline</h3>
+                <h3 class="block-title zh">步骤一 · 核心技术实现：工况划分与动态基线</h3>
+                <h3 class="block-title en" style="display:none">Step 1 · Core Tech: Condition Classification & Dynamic Baseline</h3>
                 
                 <h4 style="margin: 1.5rem 0 1rem; color: var(--accent);" class="zh">一、如何划分「粗加工 / 精加工 / 空切」</h4>
                 <h4 style="margin: 1.5rem 0 1rem; color: var(--accent);" class="en" style="display:none">1. How to Classify Machining Conditions</h4>
@@ -1335,8 +1357,76 @@
                     </div>
                 </div>
 
-                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="zh">怎么落地：三步把它做实</h4>
-                <h4 style="margin: 2rem 0 1rem; color: var(--accent);" class="en" style="display:none">How to make it real: three steps</h4>
+            </div>
+
+            <!-- 步骤二：边云分工 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">步骤二 · 边缘端做轻量特征采集，云端做策略迭代</h3>
+                <h3 class="block-title en" style="display:none">Step 2 · Lightweight Feature Collection at the Edge, Strategy Iteration in the Cloud</h3>
+
+                <p class="zh">
+                    步骤一定的是「看什么」，步骤二定的是「在哪算、谁迭代」。硬约束只有一条：判定必须在边缘闭环，云端只负责让下一次更准——车间断网时，系统仍然要会报警。
+                </p>
+                <p class="en" style="display:none">
+                    Step 1 decides what to look at; Step 2 decides where it is computed and who iterates. One hard constraint: the decision must close the loop at the edge — the cloud only makes the next round better. With the network down, the system must still alarm.
+                </p>
+
+                <div class="step-list zh">
+                    <li>
+                        <strong>边缘端：部署轻量级特征提取算法，输出特征向量</strong>
+                        （1）特征提取全部在本地完成，原始高频数据不出厂，只上传特征值与报警片段；
+                        （2）保留一个轻量异常检测模型，承担毫秒级急停判断，不等云端回包。
+                    </li>
+                    <li>
+                        <strong>云端：用积累的数据与人工复核标签迭代模型</strong>
+                        把各台设备累积的特征数据、加上人工复核过的标签，定期迭代更复杂的诊断模型，再更新下发到边缘——边缘不换硬件，能力却能持续长。
+                    </li>
+                    <li>
+                        <strong>以「物理机理约束」弥补数据稀缺</strong>
+                        纯数据驱动在故障样本少时极易过拟合。把主轴轴承的故障特征频率（BPFO/BPFI）、丝杠临界转速等物理先验嵌进模型；
+                        例如在卷积层后加一个「频带注意力」模块，强制模型优先关注与轴承缺陷频率对应的频段。
+                        这样即便故障样本只有个位数，模型也能在物理规律引导下学到正确特征，显著提升小样本下的泛化性。
+                    </li>
+                    <li>
+                        <strong>闭环到维修工单与知识库</strong>
+                        平台输出不应只是一条报警。预警触发后，自动匹配知识库中的处置预案（如「主轴振动异常 → 检查拉刀爪磨损 → 备件编号 XXX」），
+                        生成带优先级与所需工时的维修工单推送至班组终端；同时记录维修结果（更换件、耗时、修复后特征变化），反哺模型，
+                        形成「预警—处置—验证」的闭环数据，逐步提升后续预警的置信度。
+                    </li>
+                </div>
+                <div class="step-list en" style="display:none">
+                    <li>
+                        <strong>Edge: deploy lightweight feature extraction, output feature vectors</strong>
+                        (1) All feature extraction happens locally; raw high-frequency data never leaves the shop — only feature values and alarm snippets are uploaded.
+                        (2) Keep a lightweight anomaly-detection model on the box for millisecond-level emergency stop, without waiting for a cloud round trip.
+                    </li>
+                    <li>
+                        <strong>Cloud: iterate the model on accumulated data and human-reviewed labels</strong>
+                        Use the accumulated feature data from all machines plus human-verified labels to periodically train a more complex diagnostic model, then push the update to the edge — no new hardware at the edge, but growing capability.
+                    </li>
+                    <li>
+                        <strong>Compensate scarce samples with physical constraints</strong>
+                        Purely data-driven models overfit badly when fault samples are few. Embed physical priors such as bearing fault frequencies (BPFO/BPFI) and the critical speed of the screw; for example, add a "band attention" module after the convolutional layers so the model attends first to the bands matching bearing defect frequencies. Even with single-digit fault samples, the model learns the right features under physical guidance, markedly improving generalisation.
+                    </li>
+                    <li>
+                        <strong>Close the loop into work orders and the knowledge base</strong>
+                        The platform should output more than an alarm. On triggering, match a remedy from the knowledge base (e.g. "spindle vibration abnormal → check drawbar claw wear → part no. XXX"), generate a prioritised work order with estimated labour, and push it to the crew terminal. Then record the repair outcome (parts replaced, time taken, feature change after repair) and feed it back, forming a "warn → act → verify" closed loop that steadily raises confidence in later alarms.
+                    </li>
+                </div>
+                <div class="card" style="margin-top:1.5rem">
+                    <p class="zh">
+                        <strong>步骤三 ·</strong> 让维修团队先信任系统的描述性能力，再接受预测性结论。
+                    </p>
+                    <p class="en" style="display:none">
+                        <strong>Step 3 ·</strong> Let the maintenance team trust the system's descriptive capability before accepting predictive conclusions.
+                    </p>
+                </div>
+            </div>
+
+            <!-- 怎么落地 -->
+            <div class="solution-block fade-in">
+                <h3 class="block-title zh">怎么落地：三步把它做实</h3>
+                <h3 class="block-title en" style="display:none">How to make it real: three steps</h3>
                 <div class="step-list zh">
                     <li>
                         <strong>同步建「手感日志」</strong>
@@ -1525,6 +1615,92 @@
             <p class="section-subtitle en" style="display:none">Common questions about deployment, applicability and cost</p>
 
             <div class="faq-list fade-in">
+                <div class="faq-item faq-long">
+                    <div class="faq-question">
+                        <span class="zh">误报是如何产生的，又可以通过哪些途径发现？</span>
+                        <span class="en" style="display:none">Where do false alarms come from, and how can I trace them?</span>
+                        <span class="faq-icon">+</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p class="zh">
+                            误报很少是「模型不准」一句话能解释的。它通常出在四个环节之一：工况没对上、基线混进了脏样本、特征不敏感、阈值拍脑袋。
+                            所以排查也要按顺序来——先看数据落在哪个工况，再看报警来不来得及，最后才动阈值。
+                        </p>
+                        <p class="en" style="display:none">
+                            A false alarm is rarely just "the model is inaccurate". It usually comes from one of four places: conditions not aligned,
+                            dirty samples inside the baseline, insensitive features, or an arbitrary threshold. So diagnose in order — first which
+                            condition the data belongs to, then whether the alarm arrived in time, and only then touch the threshold.
+                        </p>
+
+                        <p class="faq-h zh">一、误报是怎么产生的</p>
+                        <p class="faq-h en" style="display:none">1. Where false alarms come from</p>
+                        <ul class="zh">
+                            <li><strong>工况没有对齐：</strong>同一振动幅值在粗铣时正常，在精铣时可能已预示刀具失效。固定阈值放在变工况上，必然误报与漏报并存。</li>
+                            <li><strong>基线混进异常样本：</strong>健康期数据没确认干净，基线被撑宽或撑歪，后续所有判断都建立在错的参照上。</li>
+                            <li><strong>特征选错了：</strong>用了对早期退化不敏感的特征；或者基线太宽，把早期偏离直接吞掉了。</li>
+                            <li><strong>信号没滤波：</strong>原始振动或电流受旁侧设备、冷却液冲击干扰，噪声被当成异常。</li>
+                            <li><strong>阈值缺少依据：</strong>从没明确过「漏报一次和误报十次，哪个更不可接受」，阈值就是拍脑袋定的，误报率自然失控。</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li><strong>Conditions not aligned:</strong> the same vibration amplitude is normal in rough milling yet already indicates tool wear in finishing. Fixed thresholds on varying conditions inevitably produce both false and missed alarms.</li>
+                            <li><strong>Dirty baseline samples:</strong> if healthy-period data is not verified, the baseline is stretched or skewed, and every later judgement rests on a wrong reference.</li>
+                            <li><strong>Wrong features:</strong> features insensitive to early degradation, or a baseline so wide that early deviation is swallowed.</li>
+                            <li><strong>Unfiltered signals:</strong> raw vibration or current picks up neighbouring machines and coolant impacts; noise gets read as anomaly.</li>
+                            <li><strong>Threshold with no basis:</strong> without deciding whether one missed alarm or ten false alarms is worse, any threshold is a guess and the false-alarm rate drifts.</li>
+                        </ul>
+
+                        <p class="faq-h zh">二、可以通过哪些途径发现</p>
+                        <p class="faq-h en" style="display:none">2. How to trace it</p>
+                        <ul class="zh">
+                            <li><strong>查误报发生时的工况标签：</strong>把每一次误报对应的数据片段调出来，看它被归到了哪个工况组。如果误报集中在某个特定工况（比如换刀后的第一刀、或某段进给倍率突变的区间），说明工况划分有遗漏，或者该工况下的基线数据本身就混入了异常样本。这是最直接的改进入口。</li>
+                            <li><strong>查预警提前量与真实故障的对应关系：</strong>有效性不只看「报没报」，要看「报的时候还来不来得及」。有研究用平均预警时间（参考约 19.7 小时）和晚报警数量来评估预警质量。系统报了警、但维修工到现场发现已经来不及，或者故障早就发生了才报，这个「有效性」就是假的。把每次真报警的预警时刻和实际故障显现时刻记下来算时间差——提前量普遍太短，说明特征选错了，或者基线太宽。</li>
+                            <li><strong>查误报的落点：</strong>是否集中在换刀后第一刀、进给倍率突变、程序段切换前后。这些过渡态本就是误报高发区，应先设静默期，再谈阈值。</li>
+                            <li><strong>查报警与异常信号的类型：</strong>报警号的信息量在于它属于哪一类——先看落在哪个区间，就能把排查范围从「整台机床」缩到「某一个部件」。常见几类的指向如下：
+                                <ul>
+                                    <li><strong>转速异常（偏离指令值）：</strong>通常指向电气侧——主轴电机过载、驱动器模拟量（如 0~±10V）与指令不匹配、测速编码器故障或反馈断线、驱动装置本身异常；若转速波动大且伴随异响，还要考虑机械负载剧烈变化（如切深不均）。</li>
+                                    <li><strong>主轴负载异常（偏高 / 偏低）：</strong>先说结论——先看工艺，再看机械。偏高且持续高于同工况基线，常见是机械侧阻力增大：主轴轴承磨损或预紧力过大、主轴与电机之间的传动件（皮带、齿轮）状态不佳，或刀具严重磨损仍在继续切削；偏低（空切时正常、切削时上不去）则要警惕刀具未真正接触工件、进给系统打滑，或切削参数被错误调低。</li>
+                                    <li><strong>电机电流升高：</strong>往往是机械负载变重的直接反映——导轨润滑不良、丝杠轴承磨损、平衡油缸工作不正常，都会让电机输出更大扭矩才能维持运动，电流随之上升、温度也跟着升高。</li>
+                                    <li><strong>电流正常但温度偏高：</strong>查冷却系统（风扇、油冷机）是否失效、环境温度是否超出预期。电机温度本身不适合作为早期预警——等到温度报警时，问题往往已经持续了一段时间。</li>
+                                    <li><strong>各轴坐标漂移 / 定位不准：</strong>排查顺序通常是先看伺服电机与驱动器（过载、电缆接头松动、断路短路），再看机械传动（滚珠丝杠磨损、导轨润滑不足、丝杠副预紧力变化导致反向间隙增大），同时编码器污染或信号干扰的可能性也会上升。</li>
+                                    <li><strong>刀具寿命消耗过快：</strong>排除刀具本身质量后，核对实际切削负荷是否与程序设定一致；若主轴负载与进给倍率都正常、刀具却磨损快，可能是冷却液不足、刀具动平衡不良，或切深/进给被私自调过。</li>
+                                    <li><strong>报警号按类归口：</strong>一般报警（程序格式、参数设置）指向操作或程序问题；轴/主轴类报警指向伺服或机械传动；驱动类报警（过流、过温、编码器信号丢失）则直接把你引向电机、驱动器或反馈线缆。</li>
+                                    <li><strong>组合判断（最该抓的一种）：</strong>主轴负载与进给倍率都正常、但坐标或电机电流异常时，说明切削条件没变、机床自身状态在变——这正是预测维护该抓的信号，而不是把所有异常都归到「工艺波动」里。</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li><strong>Check the condition tag of each false alarm:</strong> pull the data segment and see which condition group it was assigned to. If alarms cluster in one condition (the first cut after a tool change, a window where feed override jumped), the condition split has a gap or that group's baseline contains abnormal samples. This is the most direct entry point for improvement.</li>
+                            <li><strong>Check lead time against the real failure:</strong> effectiveness is not "did it alarm" but "was the alarm early enough". Studies evaluate warning quality with average lead time (roughly 19.7 hours as a reference) and the count of late alarms. If the crew arrives and it is already too late, or the failure had occurred before the alarm, the "effectiveness" is fake. Record the alarm time and the actual failure onset for every true alarm and compute the gap — consistently short lead time means the features are wrong or the baseline is too wide.</li>
+                            <li><strong>Check where false alarms land:</strong> first cut after tool change, feed override jumps, program segment switches. These transitions are the high-risk windows; add a silence period before tuning thresholds.</li>
+                            <li><strong>Check the type of alarm or anomaly signal:</strong> the information in an alarm number is which class it belongs to — read the range first and the search space narrows from "the whole machine" to "one component". Typical pointers:
+                                <ul>
+                                    <li><strong>Speed deviating from command:</strong> usually electrical — spindle motor overload, drive analogue output (e.g. 0~±10V) mismatched with the command, tachometer or encoder failure, broken feedback wiring, or the drive itself. If speed also fluctuates with abnormal noise, consider a rapidly changing mechanical load such as uneven depth of cut.</li>
+                                    <li><strong>Spindle load abnormal (high / low):</strong> process first, then mechanics. Persistently above the same-condition baseline usually means rising mechanical resistance: worn spindle bearings or excessive preload, a poor belt/gear train between spindle and motor, or a badly worn tool still cutting. Abnormally low (normal in air cut but never rising in cut) points to the tool not really engaging, feed system slipping, or cutting parameters wrongly reduced.</li>
+                                    <li><strong>Motor current rising:</strong> often a direct reflection of heavier mechanical load — poor guideway lubrication, worn screw bearings, a faulty balance cylinder all force the motor to output more torque, so current rises and temperature follows.</li>
+                                    <li><strong>Normal current but high temperature:</strong> check the cooling system (fan, oil cooler) and whether ambient temperature exceeds expectation. Motor temperature is a poor early warning — by the time it alarms, the problem has usually persisted for a while.</li>
+                                    <li><strong>Axis position drift / inaccuracy:</strong> check the servo motor and drive first (overload, loose cable joints, open or short circuit), then the mechanical train (worn ball screw, insufficient guideway lubrication, preload change increasing backlash), and also consider encoder contamination or signal interference.</li>
+                                    <li><strong>Tool life consumed too fast:</strong> after ruling out tool quality, verify that the actual cutting load matches the program; if spindle load and feed override are both normal yet the tool wears fast, suspect insufficient coolant, poor tool balance, or depth/feed quietly altered.</li>
+                                    <li><strong>Classify the alarm number:</strong> general alarms (program format, parameter settings) point to operation or program; axis/spindle alarms point to servo or mechanical drive; drive alarms (over-current, over-temperature, encoder signal loss) lead straight to the motor, drive or feedback cabling.</li>
+                                    <li><strong>Combination check (the one that matters most):</strong> when spindle load and feed override are both normal but axis position or motor current is abnormal, cutting conditions have not changed while the machine itself is changing — exactly the signal predictive maintenance should catch, rather than filing every anomaly under "process fluctuation".</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="faq-h zh">三、对应的改进措施</p>
+                        <p class="faq-h en" style="display:none">3. What actually fixes it</p>
+                        <ul class="zh">
+                            <li><strong>① 先确认标签是否有效：</strong>模型用的是「因果特征」还是「相关特征」？如果学的是「扭矩高→故障」这种统计相关，工况一变（换批次材料、环境温度漂移）相关性就失效。有研究在 CNC 数据集上对比，基于因果推理的模型把误报从 165 次降到 5 次（减少约 97%），召回率持平。只按工况分组算均值，本质上仍在做相关，没有引入「为什么异常」的物理约束。</li>
+                            <li><strong>② 再给信号去噪：</strong>直接用原始振动或电流的均方根做判断，在车间环境里很容易被旁侧设备、冷却液冲击干扰。对信号做带通滤波后再提取特征，能明显提升对状态变化的敏感度。如果「均值 ± 3σ」基线建在未滤波的原始信号上，误报率会明显偏高。</li>
+                            <li><strong>③ 最后定阈值偏好：</strong>报警器天然要在灵敏度与精度之间取舍：调高灵敏度能抓住更多早期异常，但误报跟着涨；调低则可能漏掉真实故障。这取决于用户对漏报与误报代价的权衡。从没明确过「这台设备漏报一次和误报十次哪个更不可接受」，阈值就是失控的起点。</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li><strong>① Verify the labels first:</strong> causal or merely correlated features? A model that learns "high torque → fault" as statistical correlation collapses when conditions change (new material batch, ambient drift). On a CNC dataset, a causality-based model cut false alarms from 165 to 5 (about 97%) with equal recall. Grouping by condition and averaging still only captures correlation; it introduces no physical constraint explaining why the value is abnormal.</li>
+                            <li><strong>② Then denoise the signal:</strong> judging on raw vibration or current RMS makes the system easy prey for neighbouring machines and coolant impacts. Band-pass filtering before feature extraction markedly improves sensitivity to state change. A mean ± 3σ baseline built on unfiltered raw signals will show a clearly higher false-alarm rate.</li>
+                            <li><strong>③ Finally set the threshold preference:</strong> any alarm trades sensitivity against precision — higher sensitivity catches more early anomalies but raises false alarms; lower sensitivity risks missing real faults. It depends on the cost trade-off between a missed alarm and a false one. Without deciding whether one missed alarm or ten false alarms is worse on this machine, the threshold has no foundation.</li>
+                        </ul>
+                    </div>
+                </div>
+
                 <div class="faq-item">
                     <div class="faq-question">
                         <span class="zh">没有数控系统读取权限，还能用上这套方案吗？</span>
@@ -1632,6 +1808,46 @@
             <p class="section-subtitle en" style="display:none">Project and website iteration records</p>
 
             <div class="timeline fade-in">
+                <div class="timeline-item">
+                    <div class="timeline-date">v1.5 · 2026-11-28</div>
+                    <div class="timeline-content">
+                        <strong class="zh">技术实现拆为步骤一 / 步骤二</strong>
+                        <strong class="en" style="display:none">Technical implementation split into Step 1 / Step 2</strong>
+                        <ul class="zh">
+                            <li>原「核心技术实现：工况划分与动态基线」改为「步骤一 · 核心技术实现：工况划分与动态基线」</li>
+                            <li>新增「步骤二 · 边缘端做轻量特征采集，云端做策略迭代」：边缘特征向量与毫秒级急停、云端用人工复核标签迭代下发、物理机理约束补样本稀缺、工单与知识库闭环</li>
+                            <li>「怎么落地：三步把它做实」提升为平级板块，与两个步骤并列，不再作为切虚为实下的子标题</li>
+                            <li>新增「步骤三 · 让维修团队先信任系统的描述性能力，再接受预测性结论」，作为收束句并入步骤二末尾，不单独占一节</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>Renamed to "Step 1 · Core Tech: Condition Classification & Dynamic Baseline"</li>
+                            <li>Added "Step 2 · Lightweight Feature Collection at the Edge, Strategy Iteration in the Cloud": edge feature vectors and ms-level emergency stop, cloud iteration with human-reviewed labels, physics constraints for scarce samples, work-order and knowledge-base loop</li>
+                            <li>Promoted "How to make it real" to its own block, level with the two steps</li>
+                            <li>Added "Step 3 · Let the maintenance team trust the system's descriptive capability before accepting predictive conclusions" as a closing line of the Step 2 block, not a separate section</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">v1.4 · 2026-11-28</div>
+                    <div class="timeline-content">
+                        <strong class="zh">新增误报排查问答</strong>
+                        <strong class="en" style="display:none">Added a false-alarm troubleshooting FAQ</strong>
+                        <ul class="zh">
+                            <li>常见问题新增首条词条：「误报是如何产生的，又可以通过哪些途径发现？」</li>
+                            <li>展开后分三段：五类误报成因、排查途径与三条改进措施（标签有效性 / 信号去噪 / 阈值偏好）</li>
+                            <li>新增长答案样式，解除该词条 500px 展开高度截断，不影响其他问答</li>
+                            <li>「可以通过哪些途径发现」补充第四条途径：按报警与异常信号分类排查（转速 / 主轴负载 / 电流温度 / 轴坐标 / 刀具寿命 / 报警号归口 / 组合判断）</li>
+                            <li>信号分类清单由 9 条精简为 8 条：主轴负载「偏高 / 偏低」合并为一条，共用「先看工艺、再看机械」的判据</li>
+                        </ul>
+                        <ul class="en" style="display:none">
+                            <li>New first FAQ entry: where false alarms come from and how to trace them</li>
+                            <li>Expands into three parts: five root causes, diagnostic routes, and three fixes (label validity / signal denoising / threshold preference)</li>
+                            <li>Added a long-answer style so this entry is not clipped at 500px; other entries are unaffected</li>
+                            <li>Added a fourth diagnostic route: classify by alarm and anomaly signal (speed / spindle load / current and temperature / axis position / tool life / alarm class / combined check)</li>
+                            <li>Condensed the signal list from 9 to 8 entries: spindle load "high / low" merged into one, sharing the "process first, then mechanics" rule</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="timeline-item">
                     <div class="timeline-date">v1.3 · 2026-11-26</div>
                     <div class="timeline-content">
